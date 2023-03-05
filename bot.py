@@ -1,5 +1,4 @@
-import openai, telebot, datetime, os, time, threading
-from pytube import YouTube
+import openai, telebot, datetime, os, time, threading, re, requests
 from yt_dlp import YoutubeDL
 from youtube_search import YoutubeSearch
 from telebot import types
@@ -32,9 +31,9 @@ def generate_image(prompt, message):
     num_image = 1
     output_format='url'
     size='1024x1024'
-    invalid_words = ['sexy','boob', 'fuck', 'dick', 'sex','asshole', 'vagina', 'penis', 'butt','breast', 'nude', 'titty', 'titties']
+    invalid_words = ['doggy','mia khalifa','sunny leone','bathing','hot girl','inner','inner wear','sexy','boob', 'leah gotti','nipple','kiss','fuck', 'dick', 'sex','asshole', 'vagina', 'naked','penis', 'butt','breast', 'nude', 'titty', 'titties','poop']
     for i in invalid_words:
-        if i in prompt:
+        if i.lower() in prompt:
             bot.send_message(message.chat.id, "Your query contains forbidden words")
             return 'err'
     try:
@@ -64,7 +63,7 @@ def generate_image(prompt, message):
 # /START COMMAND
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    bot.send_message(message.chat.id, "Morty AI Bot is a chatbot that provides a range of AI-driven services to help people manage their day-to-day tasks. It can help you with tasks such as:\n\n🔰 *AI Image generation*\n🔰 *AI ChatBot*\n🔰 *Youtube video/audio downloading*\n🔰 *Web scraping*\n🔰 *and more.*\n\nIt is powered by *natural language processing (NLP)* and *machine learning technology* to provide a personalized experience. To get started, simply send a message to Morty AI and it will respond with the help you need.\n\n*⚠️ BASIC COMMANDS ⚠️*\n/play - To play any music\n/img - To generate images based on your query\n/msg - Chat with Morty AI\n/youtube - Download YouTube video/audio\n/subscribe - Subscribe to premium\n/scrape - Web scraping\n/developer - Developer Information", parse_mode='Markdown')
+    bot.send_message(message.chat.id, "Morty AI Bot is a chatbot that provides a range of AI-driven services to help people manage their day-to-day tasks. It can help you with tasks such as:\n\n🔰 *AI Image generation*\n🔰 *AI ChatBot*\n🔰 *Youtube video/audio downloading*\n🔰 *Music player*\n🔰 *Web scraping*\n🔰 *and more.*\n\nIt is powered by *natural language processing (NLP)* and *machine learning technology* to provide a personalized experience. To get started, simply send a message to Morty AI and it will respond with the help you need.\n\n*⚠️ BASIC COMMANDS ⚠️*\n/play - To play any music\n/img - To generate images based on your query\n/msg - Chat with Morty AI\n/youtube - Download YouTube video/audio\n/subscribe - Subscribe to premium\n/scrape - Web scraping\n/developer - Developer Information", parse_mode='Markdown')
     userID = message.chat.id
     exists = 1  # 0 is TRUE, 1 is FALSE
     with open('users.json','r') as file:
@@ -96,21 +95,25 @@ def play_command(message):
     if len(query) == 0:
         bot.send_message(id, "Use `/play songname` format", parse_mode="Markdown")
     else:
-        _message = bot.send_message(id, "⌛️", parse_mode='Markdown')
-        chat_id, message_id = _message.chat.id, _message.message_id
-        dictdata = searchVideo(query)
-        first_markup = InlineKeyboardMarkup()
-        for title, urlsuffix in dictdata.items():
-            urlwithhehe = 'hehe'+ urlsuffix
+        if 'movie' in query.lower() or 'cinema' in query.lower() or 'film' in query.lower() or 'full movie' in query.lower() or '2023' in query.lower():
+            bot.send_message(message.chat.id, "Movies are not allowed!")
+        else:
+            _message = bot.send_message(id, "⌛️", parse_mode='Markdown')
+            chat_id, message_id = _message.chat.id, _message.message_id
+            dictdata = searchVideo(query)
+            first_markup = InlineKeyboardMarkup()
+            for title, urlsuffix in dictdata.items():
+                urlwithhehe = 'hehe'+ urlsuffix
+                first_markup.add(
+                    InlineKeyboardButton(title, callback_data=urlwithhehe)
+                )
             first_markup.add(
-                InlineKeyboardButton(title[0:40], callback_data=urlwithhehe)
+                InlineKeyboardButton("❌ Cancel ❌", callback_data="cancel")
             )
-        first_markup.add(
-            InlineKeyboardButton("❌ Cancel ❌", callback_data="cancel")
-        )
-        global filename
-        filename = f'{query.replace("+", "")}.mp3'
-        bot.edit_message_text(message_id=message_id,chat_id=chat_id, text=f"Found {str(len(dictdata))} results for {query} 🔎\n\n👇", reply_markup=first_markup)
+            global filename
+            filename = f'{query.replace(" ", "")}.mp3'
+            bot.edit_message_text(message_id=message_id,chat_id=chat_id, text=f"Found {str(len(dictdata))} results for {query} 🔎\n\n👇", reply_markup=first_markup)
+        
 
 
 
@@ -121,6 +124,11 @@ def callback_query_handler(call):
         playurl = 'https://youtube.com'+call.data.replace('hehe','')
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         _message = bot.send_message(chat_id=call.message.chat.id, text="_Fetching music in best quality as possible . . ._", parse_mode="Markdown")
+        html = requests.get(playurl).text
+        titleplay = re.findall(r"<title>(.*?)</title>", html)[0]
+        authorplay = re.findall(r"\"author\":\"(.*?)\"", html)[0]
+        viewsplay = re.findall(r"\"viewCountText\":{\"simpleText\":\"(.*?)\"", html)[0]
+        published_onplay = re.findall(r"\"dateText\":{\"simpleText\":\"(.*?)\"", html)[0]
         ydl_opts = {
             'format':'bestaudio[ext=mp3]/best',
             'noplaylist':True,
@@ -136,7 +144,6 @@ def callback_query_handler(call):
         with YoutubeDL(ydl_opts) as ydl:
             try:
                 def download():
-                    global dataaa
                     ydl.download(playurl)
                 downloadhehe = threading.Thread(target=download)
                 downloadhehe.run()
@@ -150,18 +157,16 @@ def callback_query_handler(call):
 
         # PHASE 2
         try:
-            markupclose = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("❌ Close player ❌", callback_data="closeplayer"))
-            try:
-                m = YouTube(playurl)
-                caption = f'{m.title} | {m.author}\n\n*Views* : {str(m.views)} views\n*Author* : {m.author}\n*Duration* : {datetime.timedelta(seconds=m.length)}s\n*Published on* : {str(m.publish_date)[:10]}\n\n\n[Morty AI](https://t.me/morty_ai_bot)'
-            except:
-                caption = '\n\n[Morty AI](https://t.me/morty_ai_bot)'
-            with open(filename+'.mp3', 'rb') as audiofile:
-                def send():
-                    bot.send_audio(chat_id=call.message.chat.id,audio=audiofile, performer=m.author, title=m.title, duration=m.length, caption=caption, parse_mode='Markdown', reply_markup=markupclose)
-                sendhehe = threading.Thread(target=send)
-                sendhehe.run()
+            if os.path.getsize(filename+'.mp3') >= 50000000:
+                bot.send_message(call.message.chat.id, "The filesize is too large! Subscribe to premium to get rid of restrictions!")
                 bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
+            else:
+                markupclose = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("❌ Close player ❌", callback_data="closeplayer"))
+                caption = f'{titleplay} | {authorplay}\n\n*Views* : {viewsplay}\n*Author* : {authorplay}\n*Published on* : {published_onplay}\n\n\n[Morty AI](https://t.me/morty_ai_bot)'
+                with open(filename+'.mp3', 'rb') as audiofile:
+                    bot.send_audio(chat_id=call.message.chat.id,audio=audiofile, performer=authorplay, title=titleplay, caption=caption, parse_mode='Markdown', reply_markup=markupclose)
+                    bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
+                
         except Exception as n:
             bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="❗️ ERROR WHILE SENTING")
             data2 = f'ERROR WHILE SENTING IN /PLAY\n\nURL : {playurl}\n{n}\nTRACEBACK\n\n{n.with_traceback}\n\n---------------------\n\n'
@@ -201,10 +206,10 @@ def callback_query_handler(call):
     
     elif call.data == 'highresolution':
         global filenamevideo
-        filenamevideo = f'video{str(randomNumber())}.mp4'
+        filenamevideo = f'video{str(randomNumber())}.ogg'
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="⌛️")
         ydl_optsvideo = {
-            "format":"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
+            "format":"bestvideo[ext=ogg]+bestaudio[ext=mp3]/best",
             "outtmpl":filenamevideo,
             "quiet":True,
         }
@@ -221,14 +226,18 @@ def callback_query_handler(call):
                     file.write(data)
                     bot.send_message(call.message.chat.id, "❗️ ERROR HAS BEEN LOGGED")
             try:
-                global youtubevideo
-                youtubevideo = YouTube(youtubevideourl)
-                with open(filenamevideo, 'rb') as videofile:
-                    def sendvideo():
-                        bot.send_document(chat_id=call.message.chat.id, document=videofile, caption=f"{youtubevideo.title}\n\n[Morty AI](https://t.me/morty_ai_bot)", parse_mode="Markdown")
-                    sendhehee = threading.Thread(target=sendvideo)
-                    sendhehee.run()
-                    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                if os.path.getsize(filenamevideo) >= 50000000:
+                     bot.send_message(call.message.chat.id, "Filesize is too large! Subscribe to premium to remove restrictions!")
+                     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                else:
+                    html = requests.get(youtubevideourl).text
+                    title = re.findall(r"<title>(.*?) - YouTube</title>", html)[0]
+                    with open(filenamevideo, 'rb') as videofile:
+                        def sendvideo():
+                            bot.send_video(chat_id=call.message.chat.id, video=videofile, caption=f"{title}\n\n[Morty AI](https://t.me/morty_ai_bot)", parse_mode="Markdown")
+                        sendhehee = threading.Thread(target=sendvideo)
+                        sendhehee.run()
+                        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             
             except Exception as q:
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
@@ -248,7 +257,7 @@ def callback_query_handler(call):
         filenamevideolow = f'videolow{str(randomNumber())}.mp4'
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="⌛️")
         ydl_optsvideolow = {
-            "format":"worstvideo[ext=mp4]+worstaudio/worst",
+            "format":"worstvideo[ext=ogg]+worstaudio/worst",
             "outtmpl":filenamevideolow,
             "quiet":True,
         }
@@ -265,14 +274,17 @@ def callback_query_handler(call):
                     file.write(data5)
                     bot.send_message(call.message.chat.id, "❗️ ERROR HAS BEEN LOGGED")  
             try:
-                global youtubevideolow
-                youtubevideolow = YouTube(youtubevideourl)
-                with open(filenamevideolow, 'rb') as videofile:
-                    def sendvideolow():
-                        bot.send_video(chat_id=call.message.chat.id,video=videofile,  caption=f"{youtubevideolow.title}")
-                    sendhehee1 = threading.Thread(target=sendvideolow)
-                    sendhehee1.run()
-                    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                if os.path.getsize(filenamevideolow) >= 50000000:
+                    bot.send_message(call.message.chat.id, "The filesize is too large! Subscribe to premium to get of restrictions!")
+                else:
+                    html = requests.get(youtubevideourl).text
+                    title = re.findall(r"<title>(.*?) - YouTube</title>", html)[0]
+                    with open(filenamevideolow, 'rb') as videofile:
+                        def sendvideolow():
+                            bot.send_video(chat_id=call.message.chat.id,video=videofile,  caption=f"{title}")
+                        sendhehee1 = threading.Thread(target=sendvideolow)
+                        sendhehee1.run()
+                        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             
             except Exception as q:
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
@@ -286,8 +298,9 @@ def callback_query_handler(call):
             except:
                 print("ERROR WHILE DELETING")
     elif call.data == 'dwaudio':
-        audio = YouTube(youtubevideourl)
-        filenameaudio = audio.title.replace('|', '')
+        html2 = requests.get(youtubevideourl).text
+        titleaudio = re.findall(r"<title>(.*?)</title>", html2)[0]
+        filenameaudio = titleaudio.replace('|', '')
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="_Downloading audio in best quality as possible . . ._",parse_mode='Markdown')
         ydl_opts = {
             'format':'bestaudio[ext=mp3]/best',
@@ -315,7 +328,7 @@ def callback_query_handler(call):
                     bot.send_message(call.message.chat.id, "❗️ ERROR HAS BEEN LOGGED")
 
             try:
-                caption = f'{audio.title}\n\nDownloaded by [Morty AI](https://t.me/morty_ai_bot)'
+                caption = f'{titleaudio}\n\nDownloaded by [Morty AI](https://t.me/morty_ai_bot)'
                 with open(filenameaudio+'.mp3', 'rb') as audiofile:
                     def sendaudio():
                         bot.send_audio(chat_id=call.message.chat.id,audio=audiofile, caption=caption, parse_mode='Markdown')
@@ -385,6 +398,8 @@ def subscribe_command(message):
                 json.dump(json_data, file, indent=4)
         if accepted == 1 and notSubscribed == True:
             bot.send_message(userID, "❗️ The Access code was incorrect.")
+
+
 
 # /BC COMMAND (OWNER)
 @bot.message_handler(commands=['bc'])
@@ -475,6 +490,7 @@ def developer(message):
     gh = types.InlineKeyboardButton(text="Github", url="https://github.com/47hxl-53r")
     wp = types.InlineKeyboardButton(text="WhatsApp", url="https://wa.me/+918606672509")
     tg = types.InlineKeyboardButton(text="Telegram", url="https://t.me/ieatkidsforlunch")
+    bm = types.InlineKeyboardButton(text="Buy me a coffee?", url="https://buymeacoffee.com/mortylabz")
     keys.add(gh, wp, tg)
     bot.send_message(message.chat.id, "This BOT is developed by Morty Labz", reply_markup=keys)
 
@@ -530,7 +546,7 @@ def errors_command(message):
                 errors.append(ytdata)
 
         for error in errors:
-            bot.send_message(int(SUDO_ID), error)
+            bot.send_message(int(SUDO_ID), error, disable_web_page_preview=True)
         bot.send_message(int(SUDO_ID), "Send /clearerrors to clear error logs")
 
         
@@ -548,6 +564,7 @@ def clearerrors_command(message):
         bot.send_message(message.chat.id, "Error Logs cleared")
 
 
+
 # /YOUTUBE COMMAND
 @bot.message_handler(commands=['youtube'])
 def youtube_command(message):
@@ -563,11 +580,6 @@ def youtube_command(message):
         else:
             bot.send_message(message.chat.id, "Invalid URL detected")
 
-    
-
-
-
-
 
 
 
@@ -575,39 +587,38 @@ def youtube_command(message):
 @bot.message_handler(commands=['scrape'])
 def geturl(message):
     global rescrape
-    rescrape = bot.send_message(message.chat.id, "Send the URL of the website to scrape (Including http:// or https://)")
-    bot.register_next_step_handler(rescrape, createfile)
-def createfile(message):
-    url = message.text
-    if url.startswith('http://') or url.startswith('https://'):
-        source_code = sourcecode(url)
-        if source_code == 'err':
-            bot.send_message(message.chat.id, "❗️ The given URL does not respond")
-        elif source_code == 'timeout':
-            bot.send_message(message.chat.id, '❗️ Timeout occured! Site responding too slow!')
-        else:
-            end = randomNumber()
-            filename = f'scraped-{end}.txt'
-            try:
-                with open(filename, 'w+', encoding="utf-8") as f:
-                    f.writelines(source_code)
-                file = open(filename, 'rb')
-                bot.delete_message(chat_id=rescrape.chat.id, message_id = rescrape.message_id)
-                bot.send_document(message.chat.id, file)
-                file.close()
-            except Exception as e7:
-                # PHASE 2 (EXCEPTION)
-                print(f"\n\n{e7.with_traceback}\n\n")
-                bot.delete_message(chat_id=rescrape.chat.id, message_id=rescrape.message_id)
-                bot.send_message(message.chat.id, "❗️ Some error occured!")
-            try:
-                # PHASE 3
-                os.remove(filename)
-            except FileNotFoundError as fnf:
-                # PHASE 3 (EXCEPTION)
-                print(f"\n{fnf}\n")
+    ok = message.text.replace('/scrape', '')
+    if len(ok == 0):
+        bot.send_message(message.chat.id, "Send in `/scrape url` format (Including http:// or https://)\nExample:\n`/scrape https://google.com`", parse_mode="Markdown")
     else:
-        bot.edit_message_text(chat_id=rescrape.chat.id, message_id=rescrape.message_id, text= "❗️ Invalid URL detected")
+        url = ok.strip()
+        if url.startswith('http://') or url.startswith('https://'):
+            source_code = sourcecode(url)
+            if source_code == 'err':
+                bot.send_message(message.chat.id, "❗️ The given URL does not respond")
+            elif source_code == 'timeout':
+                bot.send_message(message.chat.id, '❗️ Timeout occured! Site responding too slow!')
+            else:
+                end = randomNumber()
+                filename = f'scraped-{end}.txt'
+                try:
+                    with open(filename, 'w+', encoding="utf-8") as f:
+                        f.writelines(source_code)
+                    file = open(filename, 'rb')
+                    bot.send_document(message.chat.id, file)
+                    file.close()
+                except Exception as e7:
+                    # PHASE 2 (EXCEPTION)
+                    print(f"\n\n{e7.with_traceback}\n\n")
+                    bot.send_message(message.chat.id, "❗️ Some error occured!")
+                try:
+                    # PHASE 3
+                    os.remove(filename)
+                except FileNotFoundError as fnf:
+                    # PHASE 3 (EXCEPTION)
+                    print(f"\n{fnf}\n")
+        else:
+            bot.send_message(message.chat.id, "❗️ Invalid URL detected")
 
 
 
