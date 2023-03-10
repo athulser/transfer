@@ -96,7 +96,7 @@ def start_message(message):
             elif i['id'] != str(userID):
                 continue
     if exists == 1:
-        towrite = {"id":str(userID), "images_generated":0, "messages_generated":0, "credits": 5}
+        towrite = {"id":str(userID), "images_generated":0, "messages_generated":0}
         json_data.append(towrite)
         with open('users.json', 'w') as writefile:
             json.dump(json_data, writefile, indent=4)
