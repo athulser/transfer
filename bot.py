@@ -19,7 +19,7 @@ SUDO_ID = os.getenv('SUDO_ID')
 
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_users = db['test']
+collection_users = db['users']
 subs_collection = db['subscribers']
 codes_collection = db['Accesscodes'] 
 redeem_collection = db['redeemcodes']
