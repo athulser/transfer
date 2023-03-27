@@ -83,12 +83,12 @@ def generate_image(query, message, total_credits):
                 bot.send_message(message.chat.id, FORBIDDEN)
                 return 'err'
         try:
-            query = query.strip().capitalize()
-            _message = bot.send_message(message.chat.id, f"_Searching for {query}. . ._", parse_mode='Markdown')
+            query = query.strip()
+            _message = bot.send_message(message.chat.id, f"_Searching for {query.strip().capitalize()}. . ._", parse_mode='Markdown')
             test_query = query.replace(' ', '').replace("_", '')
             file_dir = f'{test_query}_{userID}'
             try:
-                crawler = GoogleImageCrawler(storage={'root_dir':f'.\\{file_dir}'})
+                crawler = GoogleImageCrawler(storage={'root_dir':f'./{file_dir}'})
                 crawler.crawl(keyword=query, max_num=1)
             except Exception as exception:
                 towrite1 = {'PROMPT':query, 'ERROR':exception}
@@ -146,7 +146,7 @@ def start_message(message):
     userID = message.chat.id
     usermsg = message.message_id
     bot.delete_message(chat_id=userID, message_id=usermsg)
-    bot.send_message(userID, "ᴍᴏʀᴛʏ ᴀɪ ʙᴏᴛ ɪꜱ ᴀ ᴄʜᴀᴛʙᴏᴛ ᴛʜᴀᴛ ᴘʀᴏᴠɪᴅᴇꜱ ᴀ ʀᴀɴɢᴇ ᴏꜰ ᴀɪ-ᴅʀɪᴠᴇɴ ꜱᴇʀᴠɪᴄᴇꜱ ᴛᴏ ʜᴇʟᴘ ᴘᴇᴏᴘʟᴇ ᴍᴀɴᴀɢᴇ ᴛʜᴇɪʀ ᴅᴀʏ-ᴛᴏ-ᴅᴀʏ ᴛᴀꜱᴋꜱ. It can help you with tasks such as:\n\n🔰 *ɢᴇᴛ ɪᴍᴀɢᴇ ꜰʀᴏᴍ Qᴜᴇʀʏ*\n*ʏᴏᴜᴛᴜʙᴇ ᴠɪᴅᴇᴏ/ᴀᴜᴅɪᴏ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ*\n🔰 **\n🔰 *ᴍᴜꜱɪᴄ ᴘʟᴀʏᴇʀ*\n🔰 *ᴡᴇʙ ꜱᴄʀᴀᴘɪɴɢ*\n🔰 *Wikipedia search*\n🔰 *ᴀɴᴅ ᴍᴏʀᴇ.*\n\n*ɪᴛ ɪꜱ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɴᴀᴛᴜʀᴀʟ ʟᴀɴɢᴜᴀɢᴇ ᴘʀᴏᴄᴇꜱꜱɪɴɢ (ɴʟᴘ)* ᴀɴᴅ *ᴍᴀᴄʜɪɴᴇ ʟᴇᴀʀɴɪɴɢ ᴛᴇᴄʜɴᴏʟᴏɢʏ* ᴛᴏ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴘᴇʀꜱᴏɴᴀʟɪᴢᴇᴅ ᴇxᴘᴇʀɪᴇɴᴄᴇ. ᴛᴏ ɢᴇᴛ ꜱᴛᴀʀᴛᴇᴅ, ꜱɪᴍᴘʟʏ ꜱᴇɴᴅ ᴀ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴍᴏʀᴛʏ ᴀɪ ᴀɴᴅ ɪᴛ ᴡɪʟʟ ʀᴇꜱᴘᴏɴᴅ ᴡɪᴛʜ ᴛʜᴇ ʜᴇʟᴘ ʏᴏᴜ ɴᴇᴇᴅ.\n\n*⚠️ BASIC COMMANDS ⚠️*\n/img - ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɪᴍᴀɢᴇ\n/play - ᴛᴏ ᴘʟᴀʏ ᴀɴʏ ᴍᴜꜱɪᴄ\n/youtube - ᴅᴏᴡɴʟᴏᴀᴅ ʏᴏᴜᴛᴜʙᴇ ᴠɪᴅᴇᴏ/ᴀᴜᴅɪᴏ\n/wiki - To searh wikipedia\n/subscribe - ꜱᴜʙꜱᴄʀɪʙᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ\n/scrape - ᴡᴇʙ ꜱᴄʀᴀᴘɪɴɢ\n/join - ᴊᴏɪɴ ᴏᴜʀ ʙᴀꜱᴇᴍᴇɴᴛꜱ\n/developer - ᴅᴇᴠᴇʟᴏᴘᴇʀ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ", parse_mode='Markdown', reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ ❌", callback_data='close')))
+    bot.send_message(userID, "ᴍᴏʀᴛʏ ᴀɪ ʙᴏᴛ ɪꜱ ᴀ ᴄʜᴀᴛʙᴏᴛ ᴛʜᴀᴛ ᴘʀᴏᴠɪᴅᴇꜱ ᴀ ʀᴀɴɢᴇ ᴏꜰ ꜱᴇʀᴠɪᴄᴇꜱ ᴛᴏ ʜᴇʟᴘ ᴘᴇᴏᴘʟᴇ ᴍᴀɴᴀɢᴇ ᴛʜᴇɪʀ ᴅᴀʏ-ᴛᴏ-ᴅᴀʏ ᴛᴀꜱᴋꜱ. It can help you with tasks such as:\n\n🔰 *ɢᴇᴛ ɪᴍᴀɢᴇ ꜰʀᴏᴍ Qᴜᴇʀʏ*\n*ʏᴏᴜᴛᴜʙᴇ ᴠɪᴅᴇᴏ/ᴀᴜᴅɪᴏ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ*\n🔰 *ᴍᴜꜱɪᴄ ᴘʟᴀʏᴇʀ*\n🔰 *ᴡᴇʙ ꜱᴄʀᴀᴘɪɴɢ*\n🔰 *ꜱᴇᴀʀᴄʜ ᴡɪᴋɪᴘᴇᴅɪᴀ*\n🔰 *ᴀɴᴅ ᴍᴏʀᴇ.*\n\nᴛᴏ ɢᴇᴛ ꜱᴛᴀʀᴛᴇᴅ, ꜱɪᴍᴘʟʏ ꜱᴇɴᴅ ᴀ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴍᴏʀᴛʏ ᴀɪ ᴀɴᴅ ɪᴛ ᴡɪʟʟ ʀᴇꜱᴘᴏɴᴅ ᴡɪᴛʜ ᴛʜᴇ ʜᴇʟᴘ ʏᴏᴜ ɴᴇᴇᴅ.\n\n*⚠️ BASIC COMMANDS ⚠️*\n/img - ᴛᴏ ɢᴇᴛ ɪᴍᴀɢᴇ\n/play - ᴛᴏ ᴘʟᴀʏ ᴀɴʏ ᴍᴜꜱɪᴄ\n/youtube - ᴅᴏᴡɴʟᴏᴀᴅ ʏᴏᴜᴛᴜʙᴇ ᴠɪᴅᴇᴏ/ᴀᴜᴅɪᴏ\n/wiki - ᴛᴏ ꜱᴇᴀʀᴄʜ ᴡɪᴋɪᴘᴇᴅɪᴀ\n/subscribe - ꜱᴜʙꜱᴄʀɪʙᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ\n/scrape - ᴡᴇʙ ꜱᴄʀᴀᴘɪɴɢ\n/join - ᴊᴏɪɴ ᴏᴜʀ ʙᴀꜱᴇᴍᴇɴᴛꜱ\n/developer - ᴅᴇᴠᴇʟᴏᴘᴇʀ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ", parse_mode='Markdown', reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ ❌", callback_data='close')))
     res = collection_users.find_one({"id":str(userID)})
     if not res:
         towrite = {'id':str(userID), "credits":5, "joinedOn":datetime.datetime.now().timestamp()}
