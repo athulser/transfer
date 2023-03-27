@@ -849,16 +849,19 @@ def bc_command(message):
         if len(query) == 0:
             bot.send_message(int(SUDO_ID), "Type something")
         else:
+            removed_count = 0
             bot.send_message(int(SUDO_ID), "Started delivering . . .")
             query = query.strip()
             for i in collection_users.find({}):
                 try:
                     bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
-                    time.sleep(1)
+                    time.sleep(0.5)
                 except:
-                    print("User blocked")
-                
-            bot.send_message(int(SUDO_ID), "Message sent successfull!")
+                    collection_users.delete_one({'id':i['id']})
+                    print(f"User blocked - Deleted {i['id']} from DB")
+                    removed_count = removed_count + 1
+            
+            bot.send_message(int(SUDO_ID), f"Message sent successfull!\nRemoved {removed_count} users from DB.")
             
 
 
@@ -870,15 +873,18 @@ def bc_groups(message):
         if len(query) == 0:
             bot.send_message(int(SUDO_ID), "Type something")
         else:
+            removed_count = 0
             bot.send_message(int(SUDO_ID), "Started delivering . . .")
             query = query.strip()
             for i in groups_collection.find({}):
                 try:
                     bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
-                    time.sleep(1)
+                    time.sleep(0.5)
                 except:
-                    print("Blocked / No permission")
-            bot.send_message(int(SUDO_ID), "Message sent successfull!")
+                    groups_collection.delete_one({'id':i['id']})
+                    print(f"Blocked / No permission - Deleted group {i['id']} from DB")
+                    removed_count = removed_count + 1
+            bot.send_message(int(SUDO_ID), f"Message sent successfull!\nRemoved {removed_count} groups from DB.")
 
         
 
