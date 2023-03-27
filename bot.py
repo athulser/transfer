@@ -29,7 +29,7 @@ codes_collection = db['Accesscodes']
 redeem_collection = db['redeemcodes']
 groups_collection = db['groups']
 yterrorlogs_collection = db['yterrorlogs']
-imgerrorlogs_colletion = db['imgerrorlogs']
+imgerrorlogs_collection = db['imgerrorlogs']
 
 
 # INITIALISING THE BOT WITH TELEGRAM API
@@ -92,8 +92,8 @@ def generate_image(query, message, total_credits):
                 crawler = GoogleImageCrawler(storage={'root_dir':f'./{file_dir}'})
                 crawler.crawl(keyword=query, max_num=1)
             except Exception as exception:
-                towrite1 = {'PROMPT':query, 'ERROR':exception}
-                imgerrorlogs_colletion.insert_one(towrite1)
+                towrite1 = {'PROMPT':query, 'ERROR':str(exception)}
+                imgerrorlogs_collection.insert_one(towrite1)
             caption = f'<b>{query.capitalize()}</b>\n\n<a href="https://t.me/mortylab">Join MortyLabz</a> | <a href="https://buymeacoffee.com/mortylabz">Donate me</a>'
             filename = os.listdir(f'./{file_dir}')[0]
             sent_id = int(file_dir.split('_')[1])
@@ -107,18 +107,18 @@ def generate_image(query, message, total_credits):
                     collection_users.update_one({"id":str(userID)}, {'$set':{"credits":total_credits}})
                 except  Exception as t:
                     bot.send_message(chat_id=sent_id, text="Exception occured while senting!")
-                    towrite = {'PROMPT':query, 'ERROR':t}
-                    imgerrorlogs_colletion.insert_one(towrite)
+                    towrite = {'PROMPT':query, 'ERROR':str(t)}
+                    imgerrorlogs_collection.insert_one(towrite)
             try:
                 shutil.rmtree(path=file_dir)
             except Exception as error:
-                towrite2 = {'PROMPT':query, 'ERROR':error}
-                imgerrorlogs_colletion.insert_one(towrite2)
+                towrite2 = {'PROMPT':query, 'ERROR':str(error)}
+                imgerrorlogs_collection.insert_one(towrite2)
 
 
         except Exception as e:
-            towrite = {"PROMPT":query, "ERROR":e}
-            imgerrorlogs_colletion.insert_one(towrite)
+            towrite = {"PROMPT":query, "ERROR":str(e)}
+            imgerrorlogs_collection.insert_one(towrite)
             bot.send_message(message.chat.id, "❗️ Some error occured")
 
     threading.Thread(target=download, args=(query, message, total_credits)).start()
@@ -306,7 +306,7 @@ def callback_query_handler(call):
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛')
                 except Exception as e:
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ ERROR WHILE DOWNLOADING`", parse_mode="Markdown")
-                    towrite = {"URL":playurl, "Error":"ERROR WHILE DOWNLOADING MUSIC", "command":"/play", "Description":e}
+                    towrite = {"URL":playurl, "Error":"ERROR WHILE DOWNLOADING MUSIC", "command":"/play", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
 
@@ -329,7 +329,7 @@ def callback_query_handler(call):
 
             except Exception as n:
                 bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ ERROR WHILE SENTING`", parse_mode="Markdown")
-                towrite2 = {"URL":playurl, "Error":"ERROR WHILE SENTING MUSIC", "command":"/play", "Description":n}
+                towrite2 = {"URL":playurl, "Error":"ERROR WHILE SENTING MUSIC", "command":"/play", "Description":str(n)}
                 yterrorlogs_collection.insert_one(towrite2)
 
 
@@ -405,7 +405,7 @@ def callback_query_handler(call):
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛")              
                 except Exception as e:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
-                    towrite = {"URL":youtubevideourl, "Error":"ERROR WHILE DOWNLOADING HIGH RESOLUTION VIDEO", "command":"/youtube", "Description":e}
+                    towrite = {"URL":youtubevideourl, "Error":"ERROR WHILE DOWNLOADING HIGH RESOLUTION VIDEO", "command":"/youtube", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
 
@@ -431,7 +431,7 @@ def callback_query_handler(call):
 
                 except Exception as q:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
-                    towrite2 = {"URL":youtubevideourl, "Error":"ERROR WHILE SENTING HIGH RESOLUTION VIDEO", "command":"/youtube", "Description":q}
+                    towrite2 = {"URL":youtubevideourl, "Error":"ERROR WHILE SENTING HIGH RESOLUTION VIDEO", "command":"/youtube", "Description":str(q)}
                     yterrorlogs_collection.insert_one(towrite2)
 
                 try:
@@ -479,7 +479,7 @@ def callback_query_handler(call):
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛")
                 except Exception as e:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
-                    towrite = {"URL":youtubevideourl, "Error":"ERROR WHILE DOWNLOADING LOW RESOLUTION VIDEO", "command":"/youtube", "Description":e}
+                    towrite = {"URL":youtubevideourl, "Error":"ERROR WHILE DOWNLOADING LOW RESOLUTION VIDEO", "command":"/youtube", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
                 try:
@@ -501,7 +501,7 @@ def callback_query_handler(call):
 
                 except Exception as q:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
-                    towrite2 = {"URL":youtubevideourl, "Error":"ERROR WHILE SENTING LOW RESOLUTION VIDEO", "command":"/youtube", "Description":q}
+                    towrite2 = {"URL":youtubevideourl, "Error":"ERROR WHILE SENTING LOW RESOLUTION VIDEO", "command":"/youtube", "Description":str(q)}
                     yterrorlogs_collection.insert_one(towrite2)
 
                 try:
@@ -543,7 +543,7 @@ def callback_query_handler(call):
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛")              
                 except Exception as e:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
-                    towrite = {"URL":urlhigh, "Error":"ERROR WHILE DOWNLOADING HIGH RESOLUTION VIDEO IN A GROUP", "command":"Youtube in group", "Description":e}
+                    towrite = {"URL":urlhigh, "Error":"ERROR WHILE DOWNLOADING HIGH RESOLUTION VIDEO IN A GROUP", "command":"Youtube in group", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
 
@@ -568,7 +568,7 @@ def callback_query_handler(call):
 
                 except Exception as q:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
-                    towrite2 = {"URL":urlhigh, "Error":"ERROR WHILE SENTING HIGH RESOLUTION VIDEO IN A GROUP", "command":"Youtube in group", "Description":q}
+                    towrite2 = {"URL":urlhigh, "Error":"ERROR WHILE SENTING HIGH RESOLUTION VIDEO IN A GROUP", "command":"Youtube in group", "Description":str(q)}
                     yterrorlogs_collection.insert_one(towrite2)
 
                 try:
@@ -613,7 +613,7 @@ def callback_query_handler(call):
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛")         
                 except Exception as e:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
-                    towrite = {"URL":urllow, "Error":"ERROR WHILE DOWNLOADING LOW RESOLUTION VIDEO IN A GROUP", "command":"Youtube in group", "Description":e}
+                    towrite = {"URL":urllow, "Error":"ERROR WHILE DOWNLOADING LOW RESOLUTION VIDEO IN A GROUP", "command":"Youtube in group", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
 
@@ -638,7 +638,7 @@ def callback_query_handler(call):
 
                 except Exception as q:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
-                    towrite2 = {"URL":urllow, "Error":"ERROR WHILE SENTING LOW RESOLUTION VIDEO TO A GROUP", "command":"Youtube in group", "Description":q}
+                    towrite2 = {"URL":urllow, "Error":"ERROR WHILE SENTING LOW RESOLUTION VIDEO TO A GROUP", "command":"Youtube in group", "Description":str(q)}
                     yterrorlogs_collection.insert_one(towrite2)
                 
                 try:
@@ -695,7 +695,7 @@ def callback_query_handler(call):
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛")
                 except Exception as e:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
-                    towrite = {"URL":youtubevideourl, "Error":"ERROR WHILE DOWNLOADING AUDIO", "command":"/youtube", "Description":e}
+                    towrite = {"URL":youtubevideourl, "Error":"ERROR WHILE DOWNLOADING AUDIO", "command":"/youtube", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
                 try:
@@ -718,7 +718,7 @@ def callback_query_handler(call):
                             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                 except Exception as n:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
-                    towrite2 = {"URL":youtubevideourl, "Error":"ERROR WHILE SENTING AUDIO", "command":"/youtube", "Description":n}
+                    towrite2 = {"URL":youtubevideourl, "Error":"ERROR WHILE SENTING AUDIO", "command":"/youtube", "Description":str(n)}
                     yterrorlogs_collection.insert_one(towrite2)
 
                 try:
@@ -856,6 +856,7 @@ def bc_command(message):
             for i in collection_users.find({}):
                 try:
                     antiflood(bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True))
+                    time.sleep(0.5)
                 except:
                     collection_users.delete_one({'id':i['id']})
                     print(f"User blocked - Deleted {i['id']} from DB")
@@ -879,6 +880,7 @@ def bc_groups(message):
             for i in groups_collection.find({}):
                 try:
                     antiflood(bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True))
+                    time.sleep(0.5)
                 except:
                     groups_collection.delete_one({'id':i['id']})
                     print(f"Blocked / No permission - Deleted group {i['id']} from DB")
@@ -1014,10 +1016,10 @@ def count_command(message):
 def errors_command(message):
     if str(message.chat.id) == SUDO_ID:
         errors = []
-        if imgerrorlogs_colletion.count_documents({}) == 0:
+        if imgerrorlogs_collection.count_documents({}) == 0:
             errors.append("\nImg error logs are empty\n")
         else:
-            for document in imgerrorlogs_colletion.find({}):
+            for document in imgerrorlogs_collection.find({}):
                 errors.append(f"--- IMG ERROR LOGS ---\n\nPROMPT : {document['PROMPT']}\nERROR : {document['ERROR']}\n\n")
 
         if yterrorlogs_collection.count_documents({}) == 0:
@@ -1044,7 +1046,7 @@ def errors_command(message):
 def clearerrors_command(message):
     if str(message.chat.id) == SUDO_ID:
         yterrorlogs_collection.delete_many({})
-        imgerrorlogs_colletion.delete_many({})
+        imgerrorlogs_collection.delete_many({})
         bot.send_message(message.chat.id, "Error Logs cleared")
 
 
