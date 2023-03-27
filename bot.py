@@ -4,6 +4,7 @@ from wikipedia.exceptions import PageError, DisambiguationError
 from yt_dlp import YoutubeDL
 from icrawler.builtin import GoogleImageCrawler
 from telebot import custom_filters
+from telebot.util import antiflood
 from pymongo import MongoClient
 from youtube_search import YoutubeSearch
 from functions import resetFile, sourcecode, isValid, randomNumber, isSubscriber, FORBIDDEN
@@ -854,8 +855,7 @@ def bc_command(message):
             query = query.strip()
             for i in collection_users.find({}):
                 try:
-                    bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
-                    time.sleep(0.5)
+                    antiflood(bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True))
                 except:
                     collection_users.delete_one({'id':i['id']})
                     print(f"User blocked - Deleted {i['id']} from DB")
@@ -878,8 +878,7 @@ def bc_groups(message):
             query = query.strip()
             for i in groups_collection.find({}):
                 try:
-                    bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
-                    time.sleep(0.5)
+                    antiflood(bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True))
                 except:
                     groups_collection.delete_one({'id':i['id']})
                     print(f"Blocked / No permission - Deleted group {i['id']} from DB")
