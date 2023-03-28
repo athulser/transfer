@@ -1,10 +1,9 @@
-import openai, telebot, datetime, os, time, re, requests, threading, shutil
+import telebot, datetime, os, time, re, requests, threading, shutil
 from wikipedia import wikipedia
 from wikipedia.exceptions import PageError, DisambiguationError
 from yt_dlp import YoutubeDL
 from icrawler.builtin import GoogleImageCrawler
 from telebot import custom_filters
-from telebot.util import antiflood
 from pymongo import MongoClient
 from youtube_search import YoutubeSearch
 from functions import resetFile, sourcecode, isValid, randomNumber, isSubscriber, FORBIDDEN
@@ -17,7 +16,7 @@ STABLEAPIKEY = os.getenv("STABLEAPIKEY")
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 AI_API_KEY = os.getenv('AI_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
-
+BOT_USERNAME = 'morty_ai_bot'
 
 
 
@@ -34,7 +33,6 @@ imgerrorlogs_collection = db['imgerrorlogs']
 
 # INITIALISING THE BOT WITH TELEGRAM API
 bot = telebot.TeleBot(TELE_API_KEY, threaded=True)
-openai.api_key = AI_API_KEY
 active_users = {}
 active_users_wiki = {}
 play_active_users = {}
@@ -102,10 +100,13 @@ def generate_image(query, message, total_credits):
             with open(full_path, 'rb') as f:
                 bot.delete_message(chat_id=userID, message_id=_message.message_id)
                 try:
-                    bot.send_photo(chat_id=sent_id, photo=f, caption=caption, parse_mode='html')
+                    try:
+                        bot.send_photo(chat_id=sent_id, photo=f, caption=caption, parse_mode='html')
+                    except:
+                        bot.send_document(chat_id=sent_id, document=f, caption=caption, parse_mode='html')
                     total_credits = total_credits - 2
                     collection_users.update_one({"id":str(userID)}, {'$set':{"credits":total_credits}})
-                except  Exception as t:
+                except Exception as t:
                     bot.send_message(chat_id=sent_id, text="Exception occured while senting!")
                     towrite = {'PROMPT':query, 'ERROR':str(t)}
                     imgerrorlogs_collection.insert_one(towrite)
@@ -122,9 +123,6 @@ def generate_image(query, message, total_credits):
             bot.send_message(message.chat.id, "❗️ Some error occured")
 
     threading.Thread(target=download, args=(query, message, total_credits)).start()
-    
-
-
 
 
 
@@ -134,9 +132,12 @@ def me(message: telebot.types.ChatMemberUpdated):
     if new.status == 'member':
         bot.send_message(message.chat.id, "King is here!! HHAHAHAHA!!\n\nMake me an admin and i can start doing my job\n\nSend any youtube video URLs to download.\nSend `/play songname` to play any song you like.")
         groups_collection.insert_one({"id":str(message.chat.id)})
-    elif new.status == 'admin':
+    elif new.status == 'administrator':
         bot.send_message(message.chat.id, "Send any YouTube video URLs to download.\n\nUse `/play any song` to play any song you want.", parse_mode="Markdown")
         groups_collection.insert_one({"id":str(message.chat.id)})
+    elif new.status == 'left':
+        groups_collection.delete_one({"id":str(message.chat.id)})
+        print('removed')
 
 
 
@@ -320,7 +321,7 @@ def callback_query_handler(call):
                     bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
                 else:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬛⬛')
-                    markupclose = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ➕", url="https://t.me/morty_ai_bot?startgroup=start"), InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ ᴘʟᴀʏᴇʀ ❌", callback_data="close"))
+                    markupclose = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ➕", url=f"https://t.me/{BOT_USERNAME}?startgroup=start"), InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ ᴘʟᴀʏᴇʀ ❌", callback_data="close"))
                     caption = f'{titleplay} | {authorplay}\n\n<b>Views</b> : {viewsplay}\n<b>Author</b> : {authorplay}\n<b>Published on</b> : {published_onplay}\n\n\n<a href="https://t.me/mortylab">Join MortyLabz</a> | <a href="https://buymeacoffee.com/mortylabz">Donate me</a>'
                     with open(filename+'.mp3', 'rb') as audiofile:
                         bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
@@ -855,8 +856,8 @@ def bc_command(message):
             query = query.strip()
             for i in collection_users.find({}):
                 try:
-                    antiflood(bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True))
-                    time.sleep(0.5)
+                    bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
+                    time.sleep(2)
                 except:
                     collection_users.delete_one({'id':i['id']})
                     print(f"User blocked - Deleted {i['id']} from DB")
@@ -879,8 +880,8 @@ def bc_groups(message):
             query = query.strip()
             for i in groups_collection.find({}):
                 try:
-                    antiflood(bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True))
-                    time.sleep(0.5)
+                    bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
+                    time.sleep(2)
                 except:
                     groups_collection.delete_one({'id':i['id']})
                     print(f"Blocked / No permission - Deleted group {i['id']} from DB")
