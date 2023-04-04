@@ -7,7 +7,7 @@ from wikipedia.exceptions import PageError, DisambiguationError
 from yt_dlp import YoutubeDL
 from icrawler.builtin import GoogleImageCrawler
 from telebot import custom_filters
-from telebot.apihelper import ApiTelegramException, log_out
+from telebot.apihelper import ApiTelegramException
 from pymongo import MongoClient
 from youtube_search import YoutubeSearch
 from functions import resetFile, sourcecode, isValid, randomNumber, isSubscriber, FORBIDDEN, isIgLink
@@ -23,11 +23,11 @@ STABLEAPIKEY = os.getenv("STABLEAPIKEY")
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 AI_API_KEY = os.getenv('AI_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
-BOT_USERNAME = 'morty_ai_bot'
+BOT_USERNAME = 'nibbaniggabot'
 
-log_out(TELE_API_KEY)
-telebot.apihelper.READ_TIMEOUT = 60
-telebot.apihelper.API_URL = 'apiurlhere'
+
+# telebot.apihelper.READ_TIMEOUT = 60
+# telebot.apihelper.API_URL = 'apiurlhere'
 
 state_storage = StateMemoryStorage()
 class MyStates(StatesGroup):
@@ -40,12 +40,12 @@ class MyStates(StatesGroup):
 
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_users = db['users']
+collection_users = db['test']
 subs_collection = db['subscribers']
 igerrorlogs_collection = db['igerrorlogs']
 codes_collection = db['Accesscodes'] 
 redeem_collection = db['redeemcodes']
-groups_collection = db['groups']
+groups_collection = db['testgroups']
 yterrorlogs_collection = db['yterrorlogs']
 imgerrorlogs_collection = db['imgerrorlogs']
 
@@ -55,7 +55,7 @@ bot = telebot.TeleBot(TELE_API_KEY, threaded=True, state_storage=state_storage)
 active_users = {}
 active_users_wiki = {}
 play_active_users = {}
-
+bot.log_out()
 bot.delete_my_commands(scope=telebot.types.BotCommandScopeAllGroupChats(), language_code=None)
 
 bot.set_my_commands(commands=[
