@@ -1,12 +1,12 @@
 from pymongo import MongoClient
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_users = db['test']
+collection_users = db['users']
 subs_collection = db['subscribers']
 igerrorlogs_collection = db['igerrorlogs']
 codes_collection = db['Accesscodes'] 
 redeem_collection = db['redeemcodes']
-groups_collection = db['testgroups']
+groups_collection = db['groups']
 yterrorlogs_collection = db['yterrorlogs']
 imgerrorlogs_collection = db['imgerrorlogs']
 
