@@ -1,8 +1,8 @@
 from pymongo import MongoClient
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_groups = db['testgroups']
-collection_users = db['test']
+collection_groups = db['groups']
+collection_users = db['users']
 
 # 0 is FALSE
 # 1 is TRUE
