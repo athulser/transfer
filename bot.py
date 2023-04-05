@@ -26,7 +26,7 @@ SUDO_ID = os.getenv('SUDO_ID')
 BOT_USERNAME = 'morty_ai_bot'
 
 
-telebot.apihelper.READ_TIMEOUT = 200
+telebot.apihelper.READ_TIMEOUT = 250
 telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
 
 state_storage = StateMemoryStorage()
