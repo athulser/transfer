@@ -20,11 +20,11 @@ BOT_STARTED = time.time()
 load_dotenv(find_dotenv())
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
-BOT_USERNAME = 'nigganibbabot'
+BOT_USERNAME = 'morty_ai_bot'
 
 
 telebot.apihelper.READ_TIMEOUT = 250
-# telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
+telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
 
 state_storage = StateMemoryStorage()
 class MyStates(StatesGroup):
@@ -37,12 +37,12 @@ class MyStates(StatesGroup):
 
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_users = db['test']
+collection_users = db['users']
 subs_collection = db['subscribers']
 igerrorlogs_collection = db['igerrorlogs']
 codes_collection = db['Accesscodes'] 
 redeem_collection = db['redeemcodes']
-groups_collection = db['testgroups']
+groups_collection = db['groups']
 yterrorlogs_collection = db['yterrorlogs']
 imgerrorlogs_collection = db['imgerrorlogs']
 
@@ -62,6 +62,8 @@ bot.set_my_commands(commands=[
     telebot.types.BotCommand("fb", "Download Facebook media"),
     telebot.types.BotCommand("img", "Get any image you want"),
     telebot.types.BotCommand("wiki", "Search wikipedia"),
+    telebot.types.BotCommand("ping", "Test my speed"),
+    telebot.types.BotCommand("stats", "Server status"),
     telebot.types.BotCommand("scrape", "Scrape a website"),
     telebot.types.BotCommand("account", "View your account"),
     telebot.types.BotCommand("join", "Join our basements"),
@@ -78,6 +80,8 @@ bot.set_my_commands(commands=[
     telebot.types.BotCommand("fb", "Download Facebook media"),
     telebot.types.BotCommand("img", "Get any image you want"),
     telebot.types.BotCommand("wiki", "Search wikipedia"),
+    telebot.types.BotCommand("ping", "Test my speed"),
+    telebot.types.BotCommand("stats", "Server status"),
     telebot.types.BotCommand("scrape", "Scrape a website"),
     telebot.types.BotCommand("account", "View your account"),
     telebot.types.BotCommand("join", "Join our basements"),
@@ -202,7 +206,7 @@ def download_ig(message):
 def stats_command(message):
     chatID = message.chat.id
     _start = time.time()
-    msg = bot.send_message(chatID, "_calculating . . ._", parse_mode='Markdown')
+    msg = bot.reply_to(message=message, text="_calculating . . ._", parse_mode='Markdown')
     _end = time.time()
     ping = int((_end - _start) * 1000)
     uptime_seconds = int(time.time() - BOT_STARTED)
