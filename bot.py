@@ -1,4 +1,4 @@
-import telebot, datetime, os, time, re, requests, threading, shutil, psutil, platform
+import telebot, datetime, os, time, re, requests, threading, shutil
 from wikipedia import wikipedia
 from telebot.storage import StateMemoryStorage
 from settings import *
@@ -21,7 +21,7 @@ load_dotenv(find_dotenv())
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
 BOT_USERNAME = 'morty_ai_bot'
-#BOT_USERNAME = 'nigganibbabot'
+# BOT_USERNAME = 'nigganibbabot'
 
 
 telebot.apihelper.READ_TIMEOUT = 250
@@ -54,11 +54,6 @@ active_users = {}
 active_users_wiki = {}
 play_active_users = {}
 bot.delete_my_commands(scope=telebot.types.BotCommandScopeAllGroupChats(), language_code=None)
-
-@bot.message_handler(commands=['send'])
-def send(message):
-    uri = 'file:///home/atulvg_radhika/servermachine/clone.sh'
-    bot.send_document(chat_id=message.chat.id, document=uri)
 
 bot.set_my_commands(commands=[
     telebot.types.BotCommand("start", 'To start me'),
@@ -336,31 +331,33 @@ def generate_image(query, message, total_credits, userID):
             
             if chat_action:
                 bot.send_chat_action(chat_id=message.chat.id, action="upload_photo")
-            with open(full_path, 'rb') as f:
-                bot.delete_message(chat_id=message.chat.id, message_id=_message.message_id)
-                try:
-                    bot.send_photo(chat_id=sent_id, photo=f, caption=caption, parse_mode='html')
-                    total_credits = total_credits - 2
-                    collection_users.update_one({"id":str(userID)}, {'$set':{"credits":total_credits}})
-                except:
-                    error = True
+            file_uri = "file://" + os.path.join(os.getcwd(), full_path)[2:]
+            
+            bot.delete_message(chat_id=message.chat.id, message_id=_message.message_id)
+            try:
+                bot.send_photo(chat_id=sent_id, photo=file_uri, caption=caption, parse_mode='html')
+                total_credits = total_credits - 2
+                collection_users.update_one({"id":str(userID)}, {'$set':{"credits":total_credits}})
+            except:
+                error = True
 
             if error == True:
                 filename = os.listdir(f'./{file_dir_sub}')[1]
                 send_id = message.chat.id
                 full_path = f'./{file_dir_sub}/{filename}'
+                file_uri_sub = "file://" + os.path.join(os.getcwd(), full_path)[2:]
                 if chat_action:
                     bot.send_chat_action(chat_id=message.chat.id, action='upload_photo')
-                with open(full_path, 'rb') as f:
-                    bot.delete_message(chat_id=message.chat.id, message_id=_message.message_id)
-                    try:
-                        bot.send_photo(chat_id=send_id, photo=f, caption=caption, parse_mode='html')
-                        total_credits = total_credits - 2
-                        collection_users.update_one({'id':str(userID)}, {'$set':{"credits":total_credits}})
-                    except Exception as t:
-                        bot.send_message(chat_id=sent_id, text="Exception occured while senting!")
-                        towrite = {'PROMPT':query, 'ERROR':str(t)}
-                        imgerrorlogs_collection.insert_one(towrite)
+               
+                bot.delete_message(chat_id=message.chat.id, message_id=_message.message_id)
+                try:
+                    bot.send_photo(chat_id=send_id, photo=file_uri_sub, caption=caption, parse_mode='html')
+                    total_credits = total_credits - 2
+                    collection_users.update_one({'id':str(userID)}, {'$set':{"credits":total_credits}})
+                except Exception as t:
+                    bot.send_message(chat_id=sent_id, text="Exception occured while senting!")
+                    towrite = {'PROMPT':query, 'ERROR':str(t)}
+                    imgerrorlogs_collection.insert_one(towrite)
             try:
                 shutil.rmtree(path=file_dir_sub)
             except Exception as error:
@@ -671,21 +668,18 @@ def callback_query_handler(call):
                     markupclose = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ", url=f"https://t.me/{BOT_USERNAME}?startgroup=start"), InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ ᴘʟᴀʏᴇʀ ❌", callback_data="close"))
                     caption = f'{titleplay} | {authorplay}\n\n<b>Views</b> : {viewsplay}\n<b>Author</b> : {authorplay}\n<b>Published on</b> : {published_onplay}\n\n\n<a href="https://t.me/mortylab">Join MortyLabz</a> | <a href="https://buymeacoffee.com/mortylabz">Donate me</a>'
                     
-                    # file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filename+'.mp3'))
-                    
-                    #WORK HERE
-                    with open(filename+'.mp3', 'rb') as audiofile:
-                        if condition and config_progressbar == 'on' or (private):
-                            bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
-                        bot.send_audio(chat_id=call.message.chat.id,audio=audiofile, performer=authorplay, title=titleplay, caption=caption, parse_mode='html', reply_markup=markupclose)
-                        bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
+                    file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filename+'.mp3'))
+                    if condition and config_progressbar == 'on' or (private):
+                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
+                    bot.send_audio(chat_id=call.message.chat.id,audio=file_uri, performer=authorplay, title=titleplay, caption=caption, parse_mode='html', reply_markup=markupclose)
+                    bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
 
             except Exception as n:
                 bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ ERROR WHILE SENTING`", parse_mode="Markdown")
                 towrite2 = {"URL":playurl, "Error":"ERROR WHILE SENTING MUSIC", "command":"/play", "Description":str(n)}
                 yterrorlogs_collection.insert_one(towrite2)
 
-
+                
             #PHASE 3
             try:
                 os.remove(filename+'.mp3')
@@ -811,11 +805,11 @@ def callback_query_handler(call):
                                 title = re.findall(r"<title>(.*?) - YouTube</title>", html)[0]
                             except:
                                 title = 'Downloaded by Morty AI'
-                            with open(filenamevideo+extension, 'rb') as videofile:
-                                bot.send_chat_action(call.message.chat.id, action="upload_video")
-                                bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛")
-                                bot.send_video(chat_id=call.message.chat.id, video=videofile, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{youtubevideourl}')))
-                                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                            file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filenamevideo+extension))
+                            bot.send_chat_action(call.message.chat.id, action="upload_video")
+                            bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛")
+                            bot.send_video(chat_id=call.message.chat.id, video=file_uri, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{youtubevideourl}')))
+                            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                     except Exception as q:
                         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
                         towrite2 = {"URL":youtubevideourl, "Error":f"ERROR WHILE SENTING {selection.upper()} RESOLUTION VIDEO", "command":"/youtube", "Description":str(q)}
@@ -928,13 +922,13 @@ def callback_query_handler(call):
                         except:
                             title = 'Downloaded by Morty AI'
 
-                        with open(filenamevideogroup+extension, 'rb') as videofile:
-                            if config_chataction == 'on':
-                                bot.send_chat_action(call.message.chat.id, action="upload_video")
-                            if config_progressbar == 'on':
-                                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
-                            bot.send_video(chat_id=call.message.chat.id, video=videofile, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
-                            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                        file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filenamevideogroup+extension))
+                        if config_chataction == 'on':
+                            bot.send_chat_action(call.message.chat.id, action="upload_video")
+                        if config_progressbar == 'on':
+                            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
+                        bot.send_video(chat_id=call.message.chat.id, video=file_uri, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
+                        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                             
 
                 except Exception as q:
@@ -983,13 +977,14 @@ def callback_query_handler(call):
                 active_users[call.message.chat.id] = now
 
         def fnaudio():
+            chatID = call.message.chat.id
             limit = 1000000000
             if subbed == 1:
                 limit = 2000000000
-            with bot.retrieve_data(user_id=call.message.chat.id, chat_id=call.message.chat.id) as data:
+            with bot.retrieve_data(user_id=chatID, chat_id=chatID) as data:
                 youtubevideourl = data['yt_url']
             filenameaudio = f'audiohigh-{str(randomNumber())}'
-            _message = bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Progress : ⬜⬛⬛⬛⬛⬛⬛⬛⬛")
+            _message = bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text="Progress : ⬜⬛⬛⬛⬛⬛⬛⬛⬛")
             ydl_opts = {
                 'format':'bestaudio[ext=mp3]/best',
                 'noplaylist':True,
@@ -1010,29 +1005,29 @@ def callback_query_handler(call):
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛")
                 except Exception as e:
                     if 'country' in str(e):
-                        bot.send_message(call.message.chat.id, "This video is not available on the BOT server's country")
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
+                        bot.send_message(chatID, "This video is not available on the BOT server's country")
+                    bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
                     towrite = {"URL":youtubevideourl, "Error":"ERROR WHILE DOWNLOADING AUDIO", "command":"/youtube", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
                 try:
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬜⬛⬛⬛")
-                    bot.send_chat_action(chat_id=call.message.chat.id, action="upload_audio")
+                    bot.send_chat_action(chat_id=chatID, action="upload_audio")
                     try:
                         html2 = requests.get(youtubevideourl).text
                         titleaudio = re.findall(r"<title>(.*?)</title>", html2)[0]
                     except:
                         titleaudio = 'Downloaded by Morty AI'
 
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬛⬛')
+                    bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬛⬛')
                     if os.path.getsize(filenameaudio+'.mp3') >= limit:
                         bot.send_message(call.message.chat.id, "The filesize is too large! subscribe to increase filesize upto 2GB")
                     else:
                         caption = f'{titleaudio}\n\n\n<a href="https://t.me/mortylab">Join MortyLabz</a> | <a href="https://buymeacoffee.com/mortylabz">Donate me</a>'
-                        with open(filenameaudio+'.mp3', 'rb') as audiofile:
-                            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
-                            bot.send_audio(chat_id=call.message.chat.id,audio=audiofile, caption=caption, parse_mode='html')
-                            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                        file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filenameaudio+'.mp3'))
+                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
+                        bot.send_audio(chat_id=chatID,audio=file_uri, caption=caption, parse_mode='html')
+                        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                 except Exception as n:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
                     towrite2 = {"URL":youtubevideourl, "Error":"ERROR WHILE SENTING AUDIO", "command":"/youtube", "Description":str(n)}
