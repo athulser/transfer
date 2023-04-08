@@ -55,6 +55,11 @@ active_users_wiki = {}
 play_active_users = {}
 bot.delete_my_commands(scope=telebot.types.BotCommandScopeAllGroupChats(), language_code=None)
 
+@bot.message_handler(commands=['send'])
+def send(message):
+    uri = 'file:///home/atulvg_radhika/servermachine/clone.sh'
+    bot.send_document(chat_id=message.chat.id, document=uri)
+
 bot.set_my_commands(commands=[
     telebot.types.BotCommand("start", 'To start me'),
     telebot.types.BotCommand("play", "Play any music"),
