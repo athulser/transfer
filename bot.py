@@ -20,12 +20,12 @@ BOT_STARTED = time.time()
 load_dotenv(find_dotenv())
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
-BOT_USERNAME = 'morty_ai_bot'
-#BOT_USERNAME = 'nigganibbabot'
+# BOT_USERNAME = 'morty_ai_bot'
+BOT_USERNAME = 'nigganibbabot'
 
 
 telebot.apihelper.READ_TIMEOUT = 250
-telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
+# telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
 
 state_storage = StateMemoryStorage()
 class MyStates(StatesGroup):
@@ -38,12 +38,12 @@ class MyStates(StatesGroup):
 
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_users = db['users']
+collection_users = db['test']
 subs_collection = db['subscribers']
 igerrorlogs_collection = db['igerrorlogs']
 codes_collection = db['Accesscodes'] 
 redeem_collection = db['redeemcodes']
-groups_collection = db['groups']
+groups_collection = db['testgroups']
 yterrorlogs_collection = db['yterrorlogs']
 imgerrorlogs_collection = db['imgerrorlogs']
 
@@ -666,13 +666,14 @@ def callback_query_handler(call):
                     markupclose = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ", url=f"https://t.me/{BOT_USERNAME}?startgroup=start"), InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ ᴘʟᴀʏᴇʀ ❌", callback_data="close"))
                     caption = f'{titleplay} | {authorplay}\n\n<b>Views</b> : {viewsplay}\n<b>Author</b> : {authorplay}\n<b>Published on</b> : {published_onplay}\n\n\n<a href="https://t.me/mortylab">Join MortyLabz</a> | <a href="https://buymeacoffee.com/mortylabz">Donate me</a>'
                     
-                    file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filename+'.mp3'))
+                    # file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filename+'.mp3'))
                     
                     #WORK HERE
-                    if condition and config_progressbar == 'on' or (private):
-                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
-                    bot.send_audio(chat_id=call.message.chat.id,audio=file_uri, performer=authorplay, title=titleplay, caption=caption, parse_mode='html', reply_markup=markupclose)
-                    bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
+                    with open(filename+'.mp3', 'rb') as audiofile:
+                        if condition and config_progressbar == 'on' or (private):
+                            bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
+                        bot.send_audio(chat_id=call.message.chat.id,audio=audiofile, performer=authorplay, title=titleplay, caption=caption, parse_mode='html', reply_markup=markupclose)
+                        bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
 
             except Exception as n:
                 bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ ERROR WHILE SENTING`", parse_mode="Markdown")
