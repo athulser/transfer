@@ -21,6 +21,7 @@ load_dotenv(find_dotenv())
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
 BOT_USERNAME = 'morty_ai_bot'
+#BOT_USERNAME = 'nigganibbabot'
 
 
 telebot.apihelper.READ_TIMEOUT = 250
@@ -215,7 +216,7 @@ def stats_command(message):
     seconds = (uptime_seconds % 60)
     uptime_str = f"{hours}ʜ:{minutes}ᴍ:{seconds}ꜱ"
     reply = f"*【 ＰＯＮＧ 】*\n\n⚡️ *ᴍᴏʀᴛʏᴀɪ ɪꜱ ᴀʟɪᴠᴇ*\n⚡️ *ᴛɪᴍᴇ ᴛᴀᴋᴇɴ : {ping}ᴍꜱ*\n⚡️ *ᴜᴘᴛɪᴍᴇ : {uptime_str}*"
-    bot.edit_message_text(chat_id=message.chat.id,message_id=msg.message_id, text=reply, parse_mode='Markdown')
+    bot.edit_message_text(chat_id=chatID,message_id=msg.message_id, text=reply, parse_mode='Markdown')
 
 
 
@@ -387,6 +388,7 @@ def me(message: telebot.types.ChatMemberUpdated):
         groups_collection.delete_one({"id":str(message.chat.id)})
 
 
+
 @bot.message_handler(commands=['listdir'], chat_types=['private'])
 def listdir(message):
     if message.chat.id == int(SUDO_ID):
@@ -420,12 +422,12 @@ def clean(message):
             if i.startswith("play") or i.startswith("audio") or i.startswith("video") or i.startswith('error'):
                 os.remove(i)
                 cleaned = cleaned + 1
-
-
     if cleaned == 0:
         bot.send_message(int(SUDO_ID), "Dir is empty, nothing to clean")
     else:
         bot.send_message(int(SUDO_ID), f'Cleaned {cleaned} files from directory.')
+
+
 
 
 
@@ -452,10 +454,12 @@ def sub(message):
 
 
 
-@bot.message_handler(['data'], chat_types=['private'])
+
+
+@bot.message_handler(['codes'], chat_types=['private'])
 def data(message):
     if str(message.chat.id) == SUDO_ID:
-        with open('data.txt', 'w') as f:
+        with open('codes.txt', 'w') as f:
             f.write("----- SUBSCRIPTION CODES -----\n\n")
             for i in codes_collection.find({}):
                 subscode = i['code']
@@ -466,9 +470,9 @@ def data(message):
                 redeemcode = f"{p['code']} : {p['credits']} credits\n"
                 f.write(redeemcode)
 
-        with open('data.txt', 'r') as f2:
+        with open('codes.txt', 'r') as f2:
             bot.send_document(chat_id=int(SUDO_ID), document=f2)
-        os.remove('data.txt')
+        os.remove('codes.txt')
             
     
 
@@ -592,6 +596,7 @@ def callback_query_handler(call):
                     limit = 2000000000
                 else:
                     limit = 1000000000
+                    
             condition = call.message.chat.type == 'group' or call.message.chat.type == 'supergroup'
             private = call.message.chat.type == 'private'
             if condition:
@@ -638,9 +643,10 @@ def callback_query_handler(call):
                 except Exception as e:
                     if 'country' in str(e):
                         bot.send_message(call.message.chat.id, "This video is not available on the BOT server's country")
-                    bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ ERROR WHILE DOWNLOADING`", parse_mode="Markdown")
-                    towrite = {"URL":playurl, "Error":"ERROR WHILE DOWNLOADING MUSIC", "command":"/play", "Description":str(e)}
-                    yterrorlogs_collection.insert_one(towrite)
+                    else:
+                        bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ ERROR WHILE DOWNLOADING`", parse_mode="Markdown")
+                        towrite = {"URL":playurl, "Error":"ERROR WHILE DOWNLOADING MUSIC", "command":"/play", "Description":str(e)}
+                        yterrorlogs_collection.insert_one(towrite)
 
 
 
@@ -659,11 +665,14 @@ def callback_query_handler(call):
                         bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬛⬛')
                     markupclose = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ", url=f"https://t.me/{BOT_USERNAME}?startgroup=start"), InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ ᴘʟᴀʏᴇʀ ❌", callback_data="close"))
                     caption = f'{titleplay} | {authorplay}\n\n<b>Views</b> : {viewsplay}\n<b>Author</b> : {authorplay}\n<b>Published on</b> : {published_onplay}\n\n\n<a href="https://t.me/mortylab">Join MortyLabz</a> | <a href="https://buymeacoffee.com/mortylabz">Donate me</a>'
-                    with open(filename+'.mp3', 'rb') as audiofile:
-                        if condition and config_progressbar == 'on' or (private):
-                            bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
-                        bot.send_audio(chat_id=call.message.chat.id,audio=audiofile, performer=authorplay, title=titleplay, caption=caption, parse_mode='html', reply_markup=markupclose)
-                        bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
+                    
+                    file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filename+'.mp3'))
+                    
+                    #WORK HERE
+                    if condition and config_progressbar == 'on' or (private):
+                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
+                    bot.send_audio(chat_id=call.message.chat.id,audio=file_uri, performer=authorplay, title=titleplay, caption=caption, parse_mode='html', reply_markup=markupclose)
+                    bot.delete_message(chat_id=_message.chat.id, message_id=_message.message_id)
 
             except Exception as n:
                 bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ ERROR WHILE SENTING`", parse_mode="Markdown")
