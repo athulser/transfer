@@ -55,6 +55,12 @@ active_users_wiki = {}
 play_active_users = {}
 bot.delete_my_commands(scope=telebot.types.BotCommandScopeAllGroupChats(), language_code=None)
 
+
+@bot.message_handler(content_types=['photo'])
+def get(message):
+    print(message.photo.file_id)
+
+
 bot.set_my_commands(commands=[
     telebot.types.BotCommand("start", 'To start me'),
     telebot.types.BotCommand("play", "Play any music"),
@@ -958,6 +964,16 @@ def callback_query_handler(call):
         bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=homemarkup)
 
 
+    elif call.data.startswith('settings_'):
+        admin_id = call.data.split('_')[1].strip()
+        if call.from_user.id == int(admin_id):
+            keyboards = [[InlineKeyboardButton('General', callback_data=f'gen_{call.from_user.id}'), InlineKeyboardButton('Image', callback_data=f'img_{call.from_user.id}'), InlineKeyboardButton('Play', callback_data=f'play_{call.from_user.id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{call.from_user.id}')]]
+            bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id, text=f'<b>Here is the settings Menu for {bot.get_chat(call.message.chat.id).title}</b>', reply_markup=InlineKeyboardMarkup(keyboard=keyboards), parse_mode='html')
+        else:
+            bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
+
+
+
 
 
     elif call.data == 'dwaud':
@@ -1076,17 +1092,17 @@ def callback_query_handler(call):
 
 
     ############################## SAVE CHANGES - CLEAN MODE(STARTS HERE) ##############################
-    elif call.data.startswith('scln_'):
-        admin_id = call.data.replace('scln_', '').strip()
+    elif call.data.startswith('scln'):
+        admin_id = call.data.split('_')[1].strip()
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=call.message.chat.id) as data:
-                if data['current_status'] == 'off':
-                    cleanmode(chat_id=call.message.chat.id, action='on')
-                elif data['current_status'] == 'on':
-                    cleanmode(chat_id=call.message.chat.id, action='off')
+            
+            if call.data.replace('scln', '').split('_')[0].strip() == 'off':
+                cleanmode(chat_id=call.message.chat.id, action='on')
+            elif call.data.replace('scln', '').split('_')[0].strip() == 'on':
+                cleanmode(chat_id=call.message.chat.id, action='off')
 
             bot.delete_state(user_id=int(admin_id), chat_id=call.message.chat.id)
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Changes saved ✅\n\n[Now close this message]", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Changes saved ✅", reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('<< Back', callback_data=f'cln_{admin_id}'),InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
             bot.answer_callback_query(call.id, text="Settings updated ✅")
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
@@ -1098,18 +1114,17 @@ def callback_query_handler(call):
 
 
     ############################## SAVE CHANGES - GET UPDATES (STARTS HERE) ##############################
-    elif call.data.startswith('sgu_'):
-        admin_id = call.data.replace('sgu_', '').strip()
+    elif call.data.startswith('sgu'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                if data['current_status_gu'] == 'off':
-                    get_updates(chat_id=chatID, action='on')
-                elif data['current_status_gu'] == 'on':
-                    get_updates(chat_id=chatID, action='off')
+            if call.data.replace('sgu', '').split('_')[0].strip() == 'on':
+                get_updates(chat_id=chatID, action='on')
+            elif call.data.replace('sgu', '').split('_')[0].strip() == 'off':
+                get_updates(chat_id=chatID, action='off')
 
-            bot.delete_state(user_id=int(admin_id), chat_id=chatID)
-            bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text="Changes saved ✅\n\n[Now close this message]", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+
+            bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text="Changes saved ✅", reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('<< Back', callback_data=f'gu_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
             bot.answer_callback_query(call.id, text="Settings updated ✅")
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
@@ -1122,16 +1137,16 @@ def callback_query_handler(call):
 
     ############################## SAVE CHANGES - NSFW FILTER (STARTS HERE) ##############################
     elif call.data.startswith('snsfw'):
-        admin_id = call.data.replace('snsfw_', '').strip()
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                if data['current_status_nsfw'] == 'off':
-                    nsfw(chat_id=chatID, action='on')
-                elif data['current_status_nsfw'] == 'on':
-                    nsfw(chat_id=chatID, action='off')
-            bot.delete_state(user_id=int(admin_id), chat_id=chatID)
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Changes saved ✅\n\n[Now close this message]", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+            
+            if call.data.replace('snsfw', '').split('_')[0].strip() == 'off':
+                nsfw(chat_id=chatID, action='on')
+            elif call.data.replace('snsfw', '').split('_')[0].strip() == 'on':
+                nsfw(chat_id=chatID, action='off')
+            
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Changes saved ✅", reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("<< Back", callback_data=f'nsfw_{admin_id}'),InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
             bot.answer_callback_query(call.id, text="Settings updated ✅")
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
@@ -1146,17 +1161,18 @@ def callback_query_handler(call):
 
 
     ############################## SAVE CHANGES - YOUTUBE PROGRESSBAR (STARTS HERE) ############################## 
-    elif call.data.startswith('sytpg_'):
-        admin_id = call.data.replace('sytpg_', '').strip()
+    elif call.data.startswith('sytpg'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                if data['current_status_youtube_pg'] == 'off':
-                    general_progress(chat_id=chatID, action='on')
-                elif data['current_status_youtube_pg'] == 'on':
-                    general_progress(chat_id=chatID, action='off')
-            bot.delete_state(user_id=int(admin_id), chat_id=chatID)
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=" Changes saved ✅\n\n[Now close this message]", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+            
+            if call.data.replace('sytpg', '').split('_')[0].strip() == 'off':
+                general_progress(chat_id=chatID, action='on')
+            elif call.data.replace('sytpg', '').split('_')[0].strip() == 'on':
+                general_progress(chat_id=chatID, action='off')
+            
+
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=" Changes saved ✅", reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('<< Back', callback_data=f'pg_{admin_id}'),InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
             bot.answer_callback_query(call.id, text="Settings updated ✅")
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
@@ -1166,17 +1182,17 @@ def callback_query_handler(call):
 
 
     ############################## CHAT ACTION SAVE SETTINGS - MAIN (STARTS HERE) ##############################
-    elif call.data.startswith('svact_'):
-        admin_id = call.data.replace('svact_', '').strip()
+    elif call.data.startswith('svact'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                if data['current_status_action'] == 'off':
-                    chataction(chat_id=chatID, action='on')
-                elif data['current_status_action'] == 'on':
-                    chataction(chat_id=chatID, action='off')
-            bot.delete_state(user_id=int(admin_id), chat_id=chatID)
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=" Changes saved ✅\n\n[Now close this message]", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+            
+            if call.data.replace('svact', '').split('_')[0].strip() == 'off':
+                chataction(chat_id=chatID, action='on')
+            elif call.data.replace('svact', '').split('_')[0].strip() == 'on':
+                chataction(chat_id=chatID, action='off')
+            
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=" Changes saved ✅", reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('<< Back', callback_data=f'chatact_{admin_id}'),InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
             bot.answer_callback_query(call.id, text="Settings updated ✅")
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
@@ -1193,9 +1209,8 @@ def callback_query_handler(call):
         chatID = call.message.chat.id
         group_name = bot.get_chat(chatID).title
         if call.from_user.id == int(admin_id):
-            buttons = [[InlineKeyboardButton('Clean mode', callback_data=f'cln_{admin_id}'), InlineKeyboardButton('Get Updates', callback_data=f'gu_{admin_id}')], [InlineKeyboardButton('ProgressBar', callback_data=f'ytpg_{admin_id}'), InlineKeyboardButton('Chat action', callback_data=f'chatact_{admin_id}')], [InlineKeyboardButton("❌ Close ❌", callback_data=f"cls_{admin_id}")]]
-            markup_general = InlineKeyboardMarkup(keyboard=buttons)
-            bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f'<b>General settings for {group_name}</b>\n\n<i>General settings contain all the settings for the basic functionality of the bot.</i>', reply_markup=markup_general, parse_mode='html')
+            buttons = [[InlineKeyboardButton('Clean mode', callback_data=f'cln_{admin_id}'), InlineKeyboardButton('Get Updates', callback_data=f'gu_{admin_id}')], [InlineKeyboardButton('ProgressBar', callback_data=f'pg_{admin_id}'), InlineKeyboardButton('Chat action', callback_data=f'chatact_{admin_id}')],[InlineKeyboardButton("<< Back", callback_data=f"settings_{admin_id}")], [InlineKeyboardButton("❌ Close ❌", callback_data=f"cls_{admin_id}")]]
+            bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f'<b>General settings for {group_name}</b>\n\n<i>General settings contain all the settings for the basic functionality of the bot.</i>', reply_markup=InlineKeyboardMarkup(keyboard=buttons), parse_mode='html')
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
     ############################## GENERAL SETTINGS - MAIN (ENDS HERE) #################################
@@ -1213,40 +1228,42 @@ def callback_query_handler(call):
         if call.from_user.id == int(admin_id):
             current_status_gu = groups_collection.find_one({'id':str(chatID)})['general']['get_updates']
             group_name_gu = bot.get_chat(chatID).title
-            bot.add_data(user_id=int(admin_id), chat_id=call.message.chat.id, current_status_gu=current_status_gu, group_name_gu=group_name_gu)
             if current_status_gu == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Get updates settings for {group_name_gu}</b>\n\n<i>If turned on, you will recieve feature updates, special offers, and other useful messages through the bot.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'ongu_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofgu_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys1 = [[InlineKeyboardButton('On', callback_data=f'onguoff_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofguoff_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'gen_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Get updates settings for {group_name_gu}</b>\n\n<i>If turned on, you will recieve feature updates, special offers, and other useful messages through the bot.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys1))
             else:
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Get updates settings for {group_name_gu}</b>\n\n<i>If turned on, you will recieve feature updates, special offers, and other useful messages through the bot.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'ongu_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofgu_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys2 = [[InlineKeyboardButton('On', callback_data=f'onguon_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofguon_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'gen_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Get updates settings for {group_name_gu}</b>\n\n<i>If turned on, you will recieve feature updates, special offers, and other useful messages through the bot.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys2))
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
 
-    elif call.data.startswith('ofgu_'):
-        admin_id = call.data.replace('ofgu_', '').strip()
+    elif call.data.startswith('ofgu'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            current_status_gu = groups_collection.find_one({'id':str(chatID)})['general']['get_updates']
+            current_status_gu = call.data.replace('ofgu', '').split('_')[0].strip()
             group_name_gu = bot.get_chat(chatID).title
             turn_off = current_status_gu
             if turn_off == 'on':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off Get updates?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sgu_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'gu_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off Get updates?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sguoff_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'gu_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="Get updates is already off", show_alert=True)
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
 
-    elif call.data.startswith('ongu_'):
-        admin_id = call.data.replace('ongu_', '').strip()
+    elif call.data.startswith('ongu'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as datas:
-                group_name_gu = datas['group_name_gu']
-                current_status_gu = datas['current_status_gu']
-                turn_on = current_status_gu
-                if turn_on == 'off':
-                    bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on Get updates?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sgu_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'gu_{admin_id}')))
-                else:
-                    bot.answer_callback_query(call.id, text="Get updates is already on", show_alert=True)
+            
+            group_name_gu = bot.get_chat(chatID).title
+            current_status_gu = call.data.replace('ongu', '').split('_')[0].strip()
+            turn_on = current_status_gu
+            if turn_on == 'off':
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on Get updates?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sguon_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'gu_{admin_id}')))
+            else:
+                bot.answer_callback_query(call.id, text="Get updates is already on", show_alert=True)
+
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
     ############################# GET UPDATES SETTINGS - (ENDS HERE) #################################
@@ -1266,39 +1283,38 @@ def callback_query_handler(call):
         if call.from_user.id == int(admin_id):
             current_status = groups_collection.find_one({'id':str(chatID)})['general']['clean_mode']
             group_name = bot.get_chat(chatID).title
-            bot.add_data(user_id=int(admin_id), chat_id=chatID, current_status=current_status, group_name=group_name)
             if current_status == 'off':
-                markup_cleanmode = InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onc_{admin_id}'), InlineKeyboardButton("Off", callback_data=f'ofc_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}'))
-                bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f"<b>Clean mode settings for {group_name}</b>\n\n<i>If turned on, bot will delete the URL or query sent by users before replying. This brings a cleaner look to the bot's performance.</i>\n\n<b>Current status : Off</b> ❌", reply_markup=markup_cleanmode, parse_mode='html')
+                keys1 = [ [InlineKeyboardButton('On', callback_data=f'oncoff_{admin_id}'), InlineKeyboardButton("Off", callback_data=f'ofcoff_{admin_id}')], [InlineKeyboardButton('<< Back', callback_data=f'gen_{admin_id}')] , [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]] 
+                markup_cleanmode1 = InlineKeyboardMarkup(keyboard=keys1)
+                bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f"<b>Clean mode settings for {group_name}</b>\n\n<i>If turned on, bot will delete the URL or query sent by users before replying. This brings a cleaner look to the bot's performance.</i>\n\n<b>Current status : Off</b> ❌", reply_markup=markup_cleanmode1, parse_mode='html')
             else:
-                markup_cleanmode = InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onc_{admin_id}'), InlineKeyboardButton("Off", callback_data=f'ofc_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}'))
-                bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f"<b>Clean mode settings for {group_name}</b>\n\n<i>If turned on, bot will delete the URL or query sent by users before replying. This brings a cleaner look to the bot's performance.</i>\n\n<b>Current status : On</b> ✅", reply_markup=markup_cleanmode, parse_mode='html')
+                keys2 = [ [InlineKeyboardButton('On', callback_data=f'oncon_{admin_id}'), InlineKeyboardButton("Off", callback_data=f'ofcon_{admin_id}')], [InlineKeyboardButton('<< Back', callback_data=f'gen_{admin_id}')] , [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                markup_cleanmode2 = InlineKeyboardMarkup(keyboard=keys2)
+                bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f"<b>Clean mode settings for {group_name}</b>\n\n<i>If turned on, bot will delete the URL or query sent by users before replying. This brings a cleaner look to the bot's performance.</i>\n\n<b>Current status : On</b> ✅", reply_markup=markup_cleanmode2, parse_mode='html')
         else:
             bot.answer_callback_query(call.id, "Only admins can do this action", show_alert=True)
 
-    elif call.data.startswith('ofc_'):
+    elif call.data.startswith('ofc'):
         chatID = call.message.chat.id
-        admin_id = call.data.replace('ofc_', '').strip()     
+        admin_id = call.data.split('_')[1].strip()    
+        current_status = call.data.replace('ofc', '').split('_')[0].strip()
+        group_name = bot.get_chat(chatID).title
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as datas:
-                group_name = datas['group_name']
-                current_status = datas['current_status']
             turn_off = current_status
             if turn_off == 'on':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off clean mode?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'scln_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'cln_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off clean mode?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sclnon_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'cln_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="Clean mode is already off", show_alert=True)
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
-    elif call.data.startswith('onc_'):
+    elif call.data.startswith('onc'):
         chatID = call.message.chat.id
-        admin_id = call.data.replace('onc_', '').strip()
+        admin_id = call.data.split('_')[1].strip()
+        current_status = call.data.replace('onc', '').split('_')[0].strip()
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as datas:
-                current_status = datas['current_status']
             turn_on = current_status
             if turn_on == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on clean mode?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'scln_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'cln_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on clean mode?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sclnoff_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'cln_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="Clean mode is already on", show_alert=True)
         else:
@@ -1312,50 +1328,60 @@ def callback_query_handler(call):
 
 
 
+
     ############################## PROGRESSBAR SETTINGS - MAIN (STARTS HERE) ##############################
-    elif call.data.startswith('ytpg_'):
-        admin_id = call.data.replace('ytpg_', '').strip()
+    elif call.data.startswith('pg_'):
+        admin_id = call.data.replace('pg_', '').strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
             group_name_youtube_pg = bot.get_chat(chatID).title
             current_status_youtube_pg = groups_collection.find_one({'id':str(chatID)})['general']['progress_animation']
-            bot.add_data(user_id=int(admin_id), chat_id=call.message.chat.id, current_status_youtube_pg=current_status_youtube_pg)
             if current_status_youtube_pg == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Download progressbar settings for {group_name_youtube_pg}</b>\n\n<i>If turned on, bot will have cool progressbar animation while downloading.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onytpg_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofytpg_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys1 = [[InlineKeyboardButton('On', callback_data=f'onpgoff_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofpgoff_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'gen_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Download progressbar settings for {group_name_youtube_pg}</b>\n\n<i>If turned on, bot will have cool progressbar animation while downloading.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys1))
             else:
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Download progressbar settings for {group_name_youtube_pg}</b>\n\n<i>If turned on, bot will have cool progressbar animation while downloading.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onytpg_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofytpg_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys2 = [[InlineKeyboardButton('On', callback_data=f'onpgon_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofpgon_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'gen_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Download progressbar settings for {group_name_youtube_pg}</b>\n\n<i>If turned on, bot will have cool progressbar animation while downloading.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys2))
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
 
-    elif call.data.startswith('onytpg_'):
-        admin_id = call.data.replace('onytpg_', '').strip()
+    elif call.data.startswith('onpg'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                current_status_youtube_pg = data['current_status_youtube_pg']
+            current_status_youtube_pg = call.data.replace('onpg', '').split('_')[0].strip()
             turn_on = current_status_youtube_pg
             if turn_on == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on progressbar for Downloads?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sytpg_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'ytpg_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on progressbar for Downloads?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sytpgoff_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'pg_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="Download progressbar is already on", show_alert=True)
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
     
 
-    elif call.data.startswith('ofytpg_'):
-        admin_id = call.data.replace('ofytpg_', '').strip()
+    elif call.data.startswith('ofpg'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                current_status_youtube_pg = data['current_status_youtube_pg']
+            current_status_youtube_pg = call.data.replace('ofpg', '').split('_')[0].strip()
             turn_off = current_status_youtube_pg
             if turn_off == 'on':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off progressbar for Downloading?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sytpg_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'ytpg_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off progressbar for Downloading?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'sytpgon_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'pg_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="Download progressbar is already off", show_alert=True)
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
     ############################## PROGRESSBAR SETTINGS - MAIN (ENDS HERE) ##############################
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1366,38 +1392,39 @@ def callback_query_handler(call):
         if call.from_user.id == int(admin_id):
             group_name_action = bot.get_chat(chatID).title
             current_status_action = groups_collection.find_one({'id':str(chatID)})['general']['chat_action']
-            bot.add_data(user_id=int(admin_id), chat_id=call.message.chat.id, current_status_action=current_status_action)
+        
             if current_status_action == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Chat action settings for {group_name_action}</b>\n\n<i>If turned on, bot will send chat action while senting the medias.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onact_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'offact_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys1 = [[InlineKeyboardButton('On', callback_data=f'onactoff_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'offactoff_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'gen_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Chat action settings for {group_name_action}</b>\n\n<i>If turned on, bot will send chat action while senting the medias.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys1))
             else:
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Chat action settings for {group_name_action}</b>\n\n<i>If turned on, bot will send chat action while senting the medias.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onact_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'offact_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys2 = [[InlineKeyboardButton('On', callback_data=f'onacton_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'offacton_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'gen_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Chat action settings for {group_name_action}</b>\n\n<i>If turned on, bot will send chat action while senting the medias.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys2))
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
     
     
-    elif call.data.startswith('onact_'):
-        admin_id = call.data.replace('onact_', '').strip()
+    elif call.data.startswith('onact'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                current_status_action = data['current_status_action']
+            
+            current_status_action = call.data.replace('onact', '').split('_')[0].strip()
             turn_on = current_status_action
             if turn_on == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on chat action?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'svact_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'chatact_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on chat action?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'svactoff_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'chatact_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="Chat action is already on", show_alert=True)
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
     
-    elif call.data.startswith('offact_'):
-        admin_id = call.data.replace('offact_', '').strip()
+    elif call.data.startswith('offact'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                current_status_action = data['current_status_action']
+            current_status_action = call.data.replace('offact', '').split('_')[0].strip()
             turn_off = current_status_action
             if turn_off == 'on':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off chat action?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'svact_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'chatact_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off chat action?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'svacton_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'chatact_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="Chat action is already off", show_alert=True)
         else:
@@ -1424,7 +1451,7 @@ def callback_query_handler(call):
         chatID = call.message.chat.id
         group_name = bot.get_chat(chatID).title
         if call.from_user.id == int(admin_id):
-            markup_play = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('Max results', callback_data=f'max_{admin_id}'), InlineKeyboardButton("❌ Close ❌", callback_data=f"cls_{admin_id}"))
+            markup_play = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('Max results', callback_data=f'max_{admin_id}'), InlineKeyboardButton("<< Back", callback_data=f"settings_{admin_id}"),InlineKeyboardButton("❌ Close ❌", callback_data=f"cls_{admin_id}"))
             bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f'<b>Play settings for {group_name}</b>\n\n<i>These settings are related to the functionality of</i> <code>/play</code>', reply_markup=markup_play, parse_mode='html')
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
@@ -1443,45 +1470,51 @@ def callback_query_handler(call):
         chatID = call.message.chat.id
         group_name = bot.get_chat(chatID).title
         if call.from_user.id == int(admin_id):
-            markup_image = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('NSFW filter', callback_data=f'nsfw_{admin_id}'), InlineKeyboardButton("❌ Close ❌", callback_data=f"cls_{admin_id}"))
+            markup_image = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton('NSFW filter', callback_data=f'nsfw_{admin_id}'), InlineKeyboardButton("<< Back", callback_data=f"settings_{admin_id}"),InlineKeyboardButton("❌ Close ❌", callback_data=f"cls_{admin_id}"))
             bot.edit_message_text(chat_id=chatID,message_id=call.message.message_id, text=f'<b>Image settings for {group_name}</b>\n\n<i>These settings are related to the functionality of</i> <code>/img</code>', reply_markup=markup_image, parse_mode='html')
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)      
+
+
+
     elif call.data.startswith('nsfw_'):
         admin_id = call.data.replace('nsfw_', '').strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
             group_name_nsfw = bot.get_chat(chatID).title
             current_status_nsfw = groups_collection.find_one({'id':str(chatID)})['image']['nsfw_filter']
-            bot.add_data(user_id=int(admin_id), chat_id=call.message.chat.id, current_status_nsfw=current_status_nsfw)
+
             if current_status_nsfw == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>NSFW filter settings for {group_name_nsfw}</b>\n\n<i>If turned on, bot will not produce NSFW images from user queries.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onnsfw_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofnsfw_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys1  = [[InlineKeyboardButton('On', callback_data=f'onnsfwoff_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofnsfwoff_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'img_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>NSFW filter settings for {group_name_nsfw}</b>\n\n<i>If turned on, bot will not produce NSFW images from user queries.</i>\n\n<b>Current status : Off</b> ❌', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys1))
             else:
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>NSFW filter settings for {group_name_nsfw}</b>\n\n<i>If turned on, bot will not produce NSFW images from user queries.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=2).add(InlineKeyboardButton('On', callback_data=f'onnsfw_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofnsfw_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+                keys2 = [[InlineKeyboardButton('On', callback_data=f'onnsfwon_{admin_id}'), InlineKeyboardButton('Off', callback_data=f'ofnsfwon_{admin_id}')], [InlineKeyboardButton("<< Back", callback_data=f'img_{admin_id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')]]
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>NSFW filter settings for {group_name_nsfw}</b>\n\n<i>If turned on, bot will not produce NSFW images from user queries.</i>\n\n<b>Current status : On</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(keyboard=keys2))
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
-    elif call.data.startswith('onnsfw_'):
-        admin_id = call.data.replace('onnsfw_', '').strip()
+
+
+    elif call.data.startswith('onnsfw'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                current_status_nsfw = data['current_status_nsfw']
+            
+            current_status_nsfw = call.data.replace('onnsfw', '').split('_')[0].strip()
             turn_on = current_status_nsfw
             if turn_on == 'off':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on NSFW filtering?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'snsfw_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'nsfw_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn on NSFW filtering?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'snsfwoff_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'nsfw_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="NSFW filtering is already on", show_alert=True)
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
-    elif call.data.startswith('ofnsfw_'):
-        admin_id = call.data.replace('ofnsfw_', '').strip()
+    elif call.data.startswith('ofnsfw'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                current_status_nsfw = data['current_status_nsfw']
+            current_status_nsfw = call.data.replace('ofnsfw', '').split('_')[0].strip()
             turn_off = current_status_nsfw
             if turn_off == 'on':
-                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off NSFW filtering?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'snsfw_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'nsfw_{admin_id}')))
+                bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text='<b>Are you sure to turn off NSFW filtering?</b>\n\nClick here to save changes', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Save changes ✅", callback_data=f'snsfwon_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'nsfw_{admin_id}')))
             else:
                 bot.answer_callback_query(call.id, text="NSFW filtering is already off", show_alert=True)
         else:
@@ -1503,22 +1536,19 @@ def callback_query_handler(call):
         if call.from_user.id == int(admin_id):
             group_name_max = bot.get_chat(chatID).title
             current_count = groups_collection.find_one({'id':str(chatID)})['play']['max_results']
-            bot.set_state(user_id=int(admin_id), chat_id=chatID, state=MyStates.settings)
-            bot.add_data(user_id=int(admin_id), chat_id=call.message.chat.id, current_count=current_count)
-            bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Max results settings for {group_name_max}</b>\n\n<i>This is the number of search results produced when you request a song using</i> <code>/play</code>.\n\n<b>Current count : {str(current_count).capitalize()}</b>\n\n\n<i>(NOTE: Click the below button, reply to the message within 10 seconds)</i>', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Change count", callback_data=f'change_{admin_id}'), InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
+            bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text=f'<b>Max results settings for {group_name_max}</b>\n\n<i>This is the number of search results produced when you request a song using</i> <code>/play</code>.\n\n<b>Current count : {str(current_count).capitalize()}</b>\n\n\n<i>(NOTE: Click the below button, reply to the message within 10 seconds)</i>', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Change count", callback_data=f'change{current_count}_{admin_id}'), InlineKeyboardButton('<< Back', callback_data=f'play_{admin_id}'),InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{admin_id}')))
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
 
-    elif call.data.startswith('change_'):
-        admin_id = call.data.replace('change_', '').strip()
+    elif call.data.startswith('change'):
+        admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
         if call.from_user.id == int(admin_id):
-            with bot.retrieve_data(user_id=int(admin_id), chat_id=chatID) as data:
-                current_count = data['current_count']
-            bot.delete_state(user_id=int(admin_id), chat_id=chatID)
+            
+            current_count = int(call.data.replace('change', '').split('_')[0].strip())
             bot.edit_message_text(chat_id=chatID, message_id=call.message.message_id, text="Send me a new count between 1 - 10 👇\n\n<i>(Note: Reply within 10 seconds or you will need to perform it from the Beginning)</i>", parse_mode='html')
             bot.set_state(user_id=int(admin_id), chat_id=chatID, state=MyStates.maxcount)
-            bot.add_data(user_id=int(admin_id), chat_id=chatID, current_count=current_count)
+            bot.add_data(user_id=int(admin_id), chat_id=chatID, admin_id=admin_id)
             def delete_state_function(user_id, chat_id):
                 time.sleep(10)
                 bot.delete_state(user_id=user_id, chat_id=chat_id)
@@ -1543,7 +1573,7 @@ def set_new_count(message):
     else:
         groups_collection.update_one({'id':str(chatID)}, {'$set':{'play.max_results':new_count}})
         bot.delete_message(chatID, message_id)
-        bot.send_message(chat_id=chatID, text=f'<b>Successfully set max results to {new_count}</b> ✅', parse_mode='html')
+        bot.send_message(chat_id=chatID, text=f'<b>Successfully set max results to {new_count}</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("❌ Close ❌", callback_data=f'close')))
         bot.delete_state(user_id=message.from_user.id, chat_id=chatID)
 
 
@@ -1977,14 +2007,13 @@ def geturl(message):
                         bot.send_chat_action(chat_id=message.chat.id, action="upload_document")
                 else:
                     bot.send_chat_action(chat_id=message.chat.id, action="upload_document")
-                end = randomNumber()
-                filename = f'scraped-{end}.txt'
+                filename = f'scraped-{randomNumber()}.txt'
                 try:
                     with open(filename, 'w+', encoding="utf-8") as f:
                         f.writelines(source_code)
-                    file = open(filename, 'rb')
-                    bot.send_document(chat_id=message.chat.id, document=file, caption=f'\n\n[Join MortyLabz](https://t.me/mortylab) | [Donate me](https://buymeacoffee.com/mortylabz)', parse_mode="Markdown")
-                    file.close()
+                    file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filename))
+                    bot.send_document(chat_id=message.chat.id, document=file_uri, caption=f'\n\n[Join MortyLabz](https://t.me/mortylab) | [Donate me](https://buymeacoffee.com/mortylabz)', parse_mode="Markdown")
+
                 except Exception as e7:
                     # PHASE 2 (EXCEPTION)
                     print(f"\n\n{e7}\n\n")
@@ -2113,13 +2142,16 @@ def settings_command(message):
         if group:
             if group['general']['clean_mode'] == 'on':
                 bot.delete_message(message.chat.id, message.message_id)
-            bot.set_state(user_id=message.from_user.id, chat_id=message.chat.id, state=MyStates.settings)
             keyboards = [[InlineKeyboardButton('General', callback_data=f'gen_{message.from_user.id}'), InlineKeyboardButton('Image', callback_data=f'img_{message.from_user.id}'), InlineKeyboardButton('Play', callback_data=f'play_{message.from_user.id}')], [InlineKeyboardButton('❌ Close ❌', callback_data=f'cls_{message.from_user.id}')]]
-            bot.send_message(message.chat.id, f'<b>Here is the settings Menu for {bot.get_chat(message.chat.id).title}</b>\n\n\n⚠️ <i>Make sure to close the settings window after use</i> ⚠️', reply_markup=InlineKeyboardMarkup(keyboard=keyboards), parse_mode='html')
+            bot.send_message(message.chat.id, f'<b>Here is the settings Menu for {bot.get_chat(message.chat.id).title}</b>', reply_markup=InlineKeyboardMarkup(keyboard=keyboards), parse_mode='html')
         else:
             bot.send_message(message.chat.id, "Group was not found in out database")
         
 
+
+@bot.message_handler(commands=['settings'], chat_types=['group', 'supergroup'], is_chat_admin=False)
+def stop(message):
+    bot.reply_to(message, "This command can only be used by admins")
 
 
 
