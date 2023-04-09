@@ -10,7 +10,7 @@ from telebot import custom_filters
 from telebot.apihelper import ApiTelegramException
 from pymongo import MongoClient
 from youtube_search import YoutubeSearch
-from functions import resetFile, sourcecode, isValid, randomNumber, isSubscriber, FORBIDDEN, isIgLink, isFbLink, get_stats
+from functions import resetFile, sourcecode, isValid, randomNumber, isSubscriber, FORBIDDEN, isIgLink, isFbLink, get_stats, split_video
 from dotenv import load_dotenv, find_dotenv
 from telebot.handler_backends import State, StatesGroup
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -233,7 +233,6 @@ def stats(message):
 
 
 
-
 # /IG COMMAND GROUP
 @bot.message_handler(content_types=['text'], chat_types=['group', 'supergroup'], text_startswith=('https://www.instagram.com/', 'https://instagram.com/'))
 def ig_group(message):
@@ -244,7 +243,7 @@ def ig_group(message):
         except:
             pass
 
-    # WORK HERE
+ 
     def group():
         config_chataction = groups_collection.find_one({'id':str(userID)})['general']['chat_action']
         url = message.text
@@ -867,6 +866,7 @@ def callback_query_handler(call):
             active_users[call.message.from_user.id] = now
 
         def downloadhigh():
+            
             if config_progressbar == 'on':
                 _message = bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Progress : ⬜⬛⬛⬛⬛⬛⬛⬛⬛")
             else:
@@ -914,8 +914,17 @@ def callback_query_handler(call):
                     if config_progressbar == 'on':
                         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬛⬛⬛')
                     if os.path.getsize(filenamevideogroup+extension) >= 2000000000:
-                         bot.send_message(call.message.chat.id, "Filesize is too large to sent!")
-                         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                         _splitting = bot.send_message(call.message.chat.id, "Filesize is larger than the limit, splitting into parts . . .")
+                         to_send = []
+                         splitted_files = split_video(filenamevideogroup+extension, f'{str(call.message.chat.id).replace("-", "").strip()}')
+                         for file in splitted_files:
+                             file_uri_splitted = 'file://' +  os.path.abspath(os.path.join(os.getcwd(), file[2:]))
+                             to_send.append(file_uri_splitted)
+                         bot.delete_message(call.message.chat.id, _splitting.message_id)
+                         for i in to_send:
+                             bot.send_video(call.message.chat.id, video=i)
+                         shutil.rmtree(f'{str(call.message.chat.id).replace("-", "").strip()}')
+
                     else:
                         if config_progressbar == 'on':
                             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬛⬛')
