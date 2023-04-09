@@ -22,6 +22,7 @@ TELE_API_KEY = os.getenv('TELE_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
 BOT_USERNAME = 'morty_ai_bot'
 # BOT_USERNAME = 'nigganibbabot'
+# BOT_USERNAME = 'atulrvbot'
 
 
 telebot.apihelper.READ_TIMEOUT = 250
@@ -796,10 +797,43 @@ def callback_query_handler(call):
                         yterrorlogs_collection.insert_one(towrite)
                     try:
                         bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬜⬛⬛⬛")
-                        filesize = os.path.getsize(filenamevideo+extension)
-                        if filesize >= limit:
-                             bot.send_message(call.message.chat.id, f"Filesize is too large ({filesize} bits)! Subscribe to premium to increase upto 2GB!")
-                             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+
+
+                        file_size = os.path.getsize(filenamevideo+extension)
+
+                        if file_size >= 1024**3:
+                            file_size_cap = round(file_size / (1024**3), 2)
+                            unit = "GB"
+                        else:
+                            file_size_cap = round(file_size / (1024**2), 2)
+                            unit = "MB"
+
+
+                        if isSubscriber(call.message.chat.id) == 1 and file_size > limit:
+                            to_send = []
+                            splitted_files = split_video(filenamevideo+extension, f'{str(call.message.chat.id)}')
+                            _splitting = bot.edit_message_text(call.message.chat.id,_message.message_id, f"Filesize is above telegram's limitation (2 GB).\n\nSplitting the video into {len(splitted_files)} parts . . .")
+                            for file in splitted_files:
+                                file_uri_splitted = 'file://' +  os.path.abspath(os.path.join(os.getcwd(), file))
+                                to_send.append(file_uri_splitted)
+
+                            bot.delete_message(call.message.chat.id, _splitting.message_id)
+                            for i in to_send:
+                                if config_chataction == 'on':
+                                    bot.send_chat_action(call.message.chat.id, action="upload_video")
+                                bot.send_video(call.message.chat.id, video=i, caption=f"Quality : <b>{selection.capitalize()} resolution ({str(file_size_cap)+unit})</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
+                            shutil.rmtree(f'{str(call.message.chat.id)}')
+
+
+
+
+                        elif isSubscriber(call.message.chat.id) == 0 and file_size >= limit:
+                            bot.send_message(call.message.chat.id, f"Filesize is too large ({file_size_cap+unit})! Subscribe to premium to get unlimited filesize")
+                            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+
+                        
+
+
                         else:
                             bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬜⬜⬛⬛")
                             try:
@@ -810,7 +844,7 @@ def callback_query_handler(call):
                             file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), filenamevideo+extension))
                             bot.send_chat_action(call.message.chat.id, action="upload_video")
                             bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛")
-                            bot.send_video(chat_id=call.message.chat.id, video=file_uri, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{youtubevideourl}')))
+                            bot.send_video(chat_id=call.message.chat.id, video=file_uri, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution ({str(file_size_cap)+unit})</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{youtubevideourl}')))
                             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                     except Exception as q:
                         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="❗️ ERROR WHILE SENTING")
@@ -913,17 +947,28 @@ def callback_query_handler(call):
                 try:
                     if config_progressbar == 'on':
                         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬛⬛⬛')
-                    if os.path.getsize(filenamevideogroup+extension) >= 2000000000:
-                         _splitting = bot.send_message(call.message.chat.id, "Filesize is larger than the limit, splitting into parts . . .")
-                         to_send = []
-                         splitted_files = split_video(filenamevideogroup+extension, f'{str(call.message.chat.id).replace("-", "").strip()}')
-                         for file in splitted_files:
-                             file_uri_splitted = 'file://' +  os.path.abspath(os.path.join(os.getcwd(), file[2:]))
-                             to_send.append(file_uri_splitted)
-                         bot.delete_message(call.message.chat.id, _splitting.message_id)
-                         for i in to_send:
-                             bot.send_video(call.message.chat.id, video=i)
-                         shutil.rmtree(f'{str(call.message.chat.id).replace("-", "").strip()}')
+                    file_size = os.path.getsize(filenamevideogroup+extension)
+                    if file_size >= 1024**3:
+                        file_size_cap = round(file_size / (1024**3), 2)
+                        unit = "GB"
+                    else:
+                        file_size_cap = round(file_size / (1024**2), 2)
+                        unit = "MB"
+                    if file_size>= 2000000000:
+                        to_send = []
+                        splitted_files = split_video(filenamevideogroup+extension, f'{str(call.from_user.id).replace("-", "")}')
+                        _splitting = bot.edit_message_text(call.message.chat.id,_message.message_id, f"Filesize is above telegram's limitation (2 GB).\n\nSplitting the video into {len(splitted_files)} parts . . .")
+                        for file in splitted_files:
+                            file_uri_splitted = 'file://' +  os.path.abspath(os.path.join(os.getcwd(), file))
+                            to_send.append(file_uri_splitted)
+
+                        bot.delete_message(call.message.chat.id, _splitting.message_id)
+                        for i in to_send:
+                            if config_chataction == 'on':
+                                bot.send_chat_action(call.message.chat.id, action="upload_video")
+                            bot.send_video(call.message.chat.id, video=i, caption=f"Quality : <b>{selection.capitalize()} resolution ({str(file_size_cap)+unit})</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
+                        shutil.rmtree(f'{str(call.from_user.id).replace("-", "").strip()}')
+
 
                     else:
                         if config_progressbar == 'on':
@@ -939,7 +984,8 @@ def callback_query_handler(call):
                             bot.send_chat_action(call.message.chat.id, action="upload_video")
                         if config_progressbar == 'on':
                             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Progress : ⬜⬜⬜⬜⬜⬜⬜⬜⬛')
-                        bot.send_video(chat_id=call.message.chat.id, video=file_uri, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
+                        
+                        bot.send_video(chat_id=call.message.chat.id, video=file_uri, caption=f"{title}\n\nQuality : <b>{selection.capitalize()} resolution ({str(file_size_cap)+unit})</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
                         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                             
 
