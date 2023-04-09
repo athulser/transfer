@@ -56,9 +56,7 @@ play_active_users = {}
 bot.delete_my_commands(scope=telebot.types.BotCommandScopeAllGroupChats(), language_code=None)
 
 
-@bot.message_handler(content_types=['photo'])
-def get(message):
-    print(message.photo.file_id)
+
 
 
 bot.set_my_commands(commands=[
@@ -337,8 +335,8 @@ def generate_image(query, message, total_credits, userID):
             
             if chat_action:
                 bot.send_chat_action(chat_id=message.chat.id, action="upload_photo")
-            file_uri = "file://" + os.path.join(os.getcwd(), full_path)[2:]
             
+            file_uri = 'file://' + os.path.abspath(os.path.join(os.getcwd(), full_path[2:]))
             bot.delete_message(chat_id=message.chat.id, message_id=_message.message_id)
             try:
                 bot.send_photo(chat_id=sent_id, photo=file_uri, caption=caption, parse_mode='html')
@@ -351,11 +349,10 @@ def generate_image(query, message, total_credits, userID):
                 filename = os.listdir(f'./{file_dir_sub}')[1]
                 send_id = message.chat.id
                 full_path = f'./{file_dir_sub}/{filename}'
-                file_uri_sub = "file://" + os.path.join(os.getcwd(), full_path)[2:]
+                file_uri_sub = 'file://' + os.path.abspath(os.path.join(os.getcwd(), full_path[2:]))
                 if chat_action:
                     bot.send_chat_action(chat_id=message.chat.id, action='upload_photo')
                
-                bot.delete_message(chat_id=message.chat.id, message_id=_message.message_id)
                 try:
                     bot.send_photo(chat_id=send_id, photo=file_uri_sub, caption=caption, parse_mode='html')
                     total_credits = total_credits - 2
@@ -402,7 +399,7 @@ def listdir(message):
     if message.chat.id == int(SUDO_ID):
         dirs = os.listdir('.')
         for i in dirs:
-            if not i.startswith('.'):
+            if not i.startswith('.') or not i.startswith('_'):
                 bot.send_message(int(SUDO_ID), i)
 
 
@@ -1589,6 +1586,7 @@ bot.add_custom_filter(custom_filters.IsReplyFilter())
 # /ACCOUNT COMMAND
 @bot.message_handler(commands=['account'], chat_types=['private', 'group', 'supergroup'])
 def account(message):
+    bot.delete_message(message.chat.id, message.message_id)
     if message.chat.type == 'private':
         userID = message.chat.id
         firstname = message.chat.first_name
@@ -1626,7 +1624,7 @@ def account(message):
                 bot.send_photo(chat_id=message.chat.id, photo=i[0].file_id, caption=caption, parse_mode="html", reply_markup=markup)
         else:
             bot.delete_message(chat_id=message.chat.id, message_id=fetch.message_id)
-            bot.send_photo(chat_id=message.chat.id, photo='AgACAgUAAxkBAAEC3xxkFsvA05ECwlpvEbv63_fZi1kUrAACQLQxGzszuVTWwSPQMZEIBgEAAwIAA3gAAy8E', caption=caption, parse_mode='html', reply_markup=markup)
+            bot.send_photo(chat_id=message.chat.id, photo='AgACAgUAAxkBAAEEPklkMb5hDEKzAAGwn7UJoPdJM_BFRlYAAqS3MRsLKIhVCDaNiU78a94BAAMCAANzAAMvBA', caption=caption, parse_mode='html', reply_markup=markup)
     else:
         if message.chat.type == 'private':
             bot.reply_to(message=message, text="You do not have an account yet.\nSend /start to create one.")
