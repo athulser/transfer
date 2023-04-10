@@ -955,7 +955,7 @@ def callback_query_handler(call):
                         file_size_cap = round(file_size / (1024**2), 2)
                         unit = "MB"
                     if file_size>= 2000000000:
-                        _splitting = bot.edit_message_text(call.message.chat.id,_message.message_id, f"Filesize is above telegram's limitation (2 GB).\n\nSplitting the video into {len(splitted_files)} parts . . .")
+                        _splitting = bot.send_message(call.message.chat.id,f"Filesize is above telegram's limitation (2 GB).\n\nSplitting the video into parts . . .")
                         splitted_files = split_video(filenamevideogroup+extension, f'{str(call.from_user.id).replace("-", "")}')
                         bot.delete_message(chat_id=_splitting.chat.id, message_id=_splitting.message_id)
                         for i in splitted_files:
