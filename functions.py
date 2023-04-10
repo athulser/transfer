@@ -2,7 +2,6 @@ import time, requests, random, platform, psutil, subprocess
 import os
 from pymongo import MongoClient
 import math
-from multiprocessing import Pool
 # from openai.error import RateLimitError, APIError
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -163,51 +162,31 @@ def split_video(filename, output_dir):
     if not os.path.isfile(filename):
         raise ValueError(f"Input file '{filename}' does not exist")
     filesize = os.path.getsize(filename)
-    max_part_size = 2 * 1024 * 1024 * 1024  # 2 GB limit
-    num_parts = math.ceil(filesize / max_part_size)
-    chunk_size = math.ceil(filesize / num_parts)
+    max_file_size = 2 * 1024 * 1024 * 1024 # Maximum file size in bytes (2GB)
+    num_parts = math.ceil(filesize / max_file_size)
+    chunk_size = max_file_size
     os.makedirs(output_dir, exist_ok=True)
     with open(filename, 'rb') as f_in:
-        remaining_bytes = filesize
-        with Pool(processes=num_parts) as pool:
-            async_results = []
-            for i in range(num_parts):
-                part_filename = os.path.join(output_dir, f'{os.path.splitext(os.path.basename(filename))[0]}_part{i+1}.mp4')
-                async_result = pool.apply_async(write_chunk, [f_in, part_filename, chunk_size, remaining_bytes])
-                async_results.append(async_result)
-                remaining_bytes -= chunk_size
-            for async_result in async_results:
-                async_result.wait()
-            exit_codes = []
-            for i in range(num_parts):
-                part_filename = os.path.join(output_dir, f'{os.path.splitext(os.path.basename(filename))[0]}_part{i+1}.mp4')
-                exit_code = os.system(f'ffmpeg -i {part_filename} -map_metadata -1 -c copy -f null - 2> {os.devnull}')
-                exit_codes.append(exit_code)
-            if any([exit_code != 0 for exit_code in exit_codes]):
+        for i in range(num_parts):
+            part_filename = os.path.join(output_dir, f'{os.path.splitext(os.path.basename(filename))[0]}_part{i+1}.mp4')
+            with open(part_filename, 'wb') as f_out:
+                remaining_bytes = chunk_size
+                while remaining_bytes > 0:
+                    chunk_bytes = min(remaining_bytes, 1024 * 1024)  # Read up to 1MB at a time
+                    f_out.write(f_in.read(chunk_bytes))
+                    remaining_bytes -= chunk_bytes
+                if i == num_parts - 1:
+                    f_out.write(f_in.read())
+            exit_code = os.system(f'ffmpeg -i {part_filename} -map_metadata -1 -c copy -f null - 2> {os.devnull}')
+            print(f"Exit code {exit_code}")
+            if exit_code != 0:
                 raise RuntimeError(f"Failed to split '{filename}' into parts")
-
     try:
         os.remove(filename)
     except Exception as e:
         raise RuntimeError(f"Failed to delete '{filename}': {e}")
     part_file = os.path.join(output_dir, f'{os.path.splitext(os.path.basename(filename))[0]}_part1.mp4')
     return [f'file://{os.path.abspath(part_file)}']
-
-
-def write_chunk(f_in, part_filename, chunk_size, remaining_bytes):
-    with open(part_filename, 'wb') as f_out:
-        while remaining_bytes > 0:
-            chunk_bytes = min(chunk_size, remaining_bytes)
-            data = f_in.read(chunk_bytes)
-            f_out.write(data)
-            remaining_bytes -= chunk_bytes
-            if not data:
-                break
-        data = f_in.read()
-        if data:
-            f_out.write(data)
-            
-    return True
 
 
 
