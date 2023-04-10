@@ -1,6 +1,8 @@
 import time, requests, random, platform, psutil, subprocess
 import os
 from pymongo import MongoClient
+import math
+from multiprocessing import Pool
 # from openai.error import RateLimitError, APIError
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -49,7 +51,6 @@ def get_stats():
 ⚡️ <b>ᴏꜱ</b> ⚡️
 ☞ ᴏꜱ : {platform.system() + platform.version()}
 ☞ ʀᴇʟᴇᴀꜱᴇ : {platform.release()}
-☞ ᴅɪꜱᴛʀɪʙᴜᴛɪᴏɴ : {platform.freedesktop_os_release()[0]}
 
 ⚡️ <b>ʀᴀᴍ</b> ⚡️
 ☞ ᴛᴏᴛᴀʟ ʀᴀᴍ : {ram_total}MB
@@ -132,28 +133,82 @@ def isSubscriber(userID):
     return status
     
 
-def split_video(input_file, output_dir):
-    ffprobe_cmd = f'ffprobe -i "{input_file}" -show_entries format=duration -v quiet -of csv="p=0"'
-    duration = float(subprocess.check_output(ffprobe_cmd, shell=True))
-    max_file_size = 2 * (1024**3)
-    part_duration = max_file_size / (os.path.getsize(input_file) / duration)
+# def split_video(input_file, output_dir):
+#     ffprobe_cmd = f'ffprobe -i "{input_file}" -show_entries format=duration -v quiet -of csv="p=0"'
+#     duration = float(subprocess.check_output(ffprobe_cmd, shell=True))
+#     max_file_size = 2 * (1024**3)
+#     part_duration = max_file_size / (os.path.getsize(input_file) / duration)
+#     os.makedirs(output_dir, exist_ok=True)
+#     output_files = []
+#     start_time = 0
+#     end_time = part_duration
+#     while end_time < duration:
+#         output_file = os.path.join(output_dir, f'{input_file.split(".")[0]}_{len(output_files)+1}.mp4')
+#         output_files.append(os.path.relpath(output_file))
+#         ffmpeg_cmd = f'ffmpeg -y -nostdin -loglevel warning -hide_banner -i "{input_file}" -ss {start_time} -to {end_time} -c copy "{output_file}"'
+#         subprocess.call(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+#         start_time = end_time
+#         end_time += part_duration
+#     output_file = os.path.join(output_dir, f'{input_file.split(".")[0]}_{len(output_files)+1}.mp4')
+#     output_files.append(os.path.relpath(output_file))
+#     ffmpeg_cmd = f'ffmpeg -y -nostdin -loglevel warning -hide_banner -i "{input_file}" -ss {start_time} -to {duration} -c copy "{output_file}"'
+#     subprocess.call(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+#     os.remove(input_file)
+#     return output_files
+
+
+
+
+def split_video(filename, output_dir):
+    if not os.path.isfile(filename):
+        raise ValueError(f"Input file '{filename}' does not exist")
+    filesize = os.path.getsize(filename)
+    max_part_size = 2 * 1024 * 1024 * 1024  # 2 GB limit
+    num_parts = math.ceil(filesize / max_part_size)
+    chunk_size = math.ceil(filesize / num_parts)
     os.makedirs(output_dir, exist_ok=True)
-    output_files = []
-    start_time = 0
-    end_time = part_duration
-    while end_time < duration:
-        output_file = os.path.join(output_dir, f'{input_file.split(".")[0]}_{len(output_files)+1}.mp4')
-        output_files.append(os.path.relpath(output_file))
-        ffmpeg_cmd = f'ffmpeg -y -nostdin -loglevel warning -hide_banner -i "{input_file}" -ss {start_time} -to {end_time} -c copy "{output_file}"'
-        subprocess.call(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
-        start_time = end_time
-        end_time += part_duration
-    output_file = os.path.join(output_dir, f'{input_file.split(".")[0]}_{len(output_files)+1}.mp4')
-    output_files.append(os.path.relpath(output_file))
-    ffmpeg_cmd = f'ffmpeg -y -nostdin -loglevel warning -hide_banner -i "{input_file}" -ss {start_time} -to {duration} -c copy "{output_file}"'
-    subprocess.call(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
-    os.remove(input_file)
-    return output_files
+    with open(filename, 'rb') as f_in:
+        remaining_bytes = filesize
+        with Pool(processes=num_parts) as pool:
+            async_results = []
+            for i in range(num_parts):
+                part_filename = os.path.join(output_dir, f'{os.path.splitext(os.path.basename(filename))[0]}_part{i+1}.mp4')
+                async_result = pool.apply_async(write_chunk, [f_in, part_filename, chunk_size, remaining_bytes])
+                async_results.append(async_result)
+                remaining_bytes -= chunk_size
+            for async_result in async_results:
+                async_result.wait()
+            exit_codes = []
+            for i in range(num_parts):
+                part_filename = os.path.join(output_dir, f'{os.path.splitext(os.path.basename(filename))[0]}_part{i+1}.mp4')
+                exit_code = os.system(f'ffmpeg -i {part_filename} -map_metadata -1 -c copy -f null - 2> {os.devnull}')
+                exit_codes.append(exit_code)
+            if any([exit_code != 0 for exit_code in exit_codes]):
+                raise RuntimeError(f"Failed to split '{filename}' into parts")
+
+    try:
+        os.remove(filename)
+    except Exception as e:
+        raise RuntimeError(f"Failed to delete '{filename}': {e}")
+    part_file = os.path.join(output_dir, f'{os.path.splitext(os.path.basename(filename))[0]}_part1.mp4')
+    return [f'file://{os.path.abspath(part_file)}']
+
+
+def write_chunk(f_in, part_filename, chunk_size, remaining_bytes):
+    with open(part_filename, 'wb') as f_out:
+        while remaining_bytes > 0:
+            chunk_bytes = min(chunk_size, remaining_bytes)
+            data = f_in.read(chunk_bytes)
+            f_out.write(data)
+            remaining_bytes -= chunk_bytes
+            if not data:
+                break
+        data = f_in.read()
+        if data:
+            f_out.write(data)
+            
+    return True
+
 
 
 
