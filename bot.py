@@ -20,9 +20,9 @@ BOT_STARTED = time.time()
 load_dotenv(find_dotenv())
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
-BOT_USERNAME = 'morty_ai_bot'
+# BOT_USERNAME = 'morty_ai_bot'
 # BOT_USERNAME = 'nigganibbabot'
-# BOT_USERNAME = 'atulrvbot'
+BOT_USERNAME = 'atulrvbot'
 
 
 telebot.apihelper.READ_TIMEOUT = 250
@@ -39,7 +39,7 @@ class MyStates(StatesGroup):
 
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_users = db['users']
+collection_users = db['test']
 subs_collection = db['subscribers']
 igerrorlogs_collection = db['igerrorlogs']
 codes_collection = db['Accesscodes'] 
