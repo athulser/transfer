@@ -939,7 +939,7 @@ def callback_query_handler(call):
                 except Exception as e:
                     if 'country' in str(e):
                         bot.send_message(call.message.chat.id, "This video is not available on the BOT server's country")
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
+                    bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="`❗️ Exception occured`", parse_mode="Markdown")
                     towrite = {"URL":urlhigh, "Error":"ERROR WHILE DOWNLOADING HIGH RESOLUTION VIDEO IN A GROUP", "command":"Youtube in group", "Description":str(e)}
                     yterrorlogs_collection.insert_one(towrite)
 
@@ -955,18 +955,13 @@ def callback_query_handler(call):
                         file_size_cap = round(file_size / (1024**2), 2)
                         unit = "MB"
                     if file_size>= 2000000000:
-                        to_send = []
-                        splitted_files = split_video(filenamevideogroup+extension, f'{str(call.from_user.id).replace("-", "")}')
                         _splitting = bot.edit_message_text(call.message.chat.id,_message.message_id, f"Filesize is above telegram's limitation (2 GB).\n\nSplitting the video into {len(splitted_files)} parts . . .")
-                        for file in splitted_files:
-                            file_uri_splitted = 'file://' +  os.path.abspath(os.path.join(os.getcwd(), file))
-                            to_send.append(file_uri_splitted)
-
-                        bot.delete_message(call.message.chat.id, _splitting.message_id)
-                        for i in to_send:
+                        splitted_files = split_video(filenamevideogroup+extension, f'{str(call.from_user.id).replace("-", "")}')
+                        bot.delete_message(chat_id=_splitting.chat.id, message_id=_splitting.message_id)
+                        for i in splitted_files:
                             if config_chataction == 'on':
-                                bot.send_chat_action(call.message.chat.id, action="upload_video")
-                            bot.send_video(call.message.chat.id, video=i, caption=f"Quality : <b>{selection.capitalize()} resolution ({str(file_size_cap)+unit})</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
+                                bot.send_chat_action(chat_id=call.message.chat.id, action="upload_video")
+                            bot.send_video(chat_id=call.message.chat.id, video=i, caption=f"Quality : <b>{selection.capitalize()} resolution ({str(file_size_cap)+unit})</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
                         shutil.rmtree(f'{str(call.from_user.id).replace("-", "").strip()}')
 
 
