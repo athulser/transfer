@@ -900,7 +900,6 @@ def callback_query_handler(call):
             active_users[call.message.from_user.id] = now
 
         def downloadhigh():
-            
             if config_progressbar == 'on':
                 _message = bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Progress : ⬜⬛⬛⬛⬛⬛⬛⬛⬛")
             else:
@@ -927,13 +926,16 @@ def callback_query_handler(call):
                 "geo_bypass":True,
                 "quiet":True,
             }
+            
+        
+
             if config_progressbar == 'on':
                 bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬛⬛⬛⬛⬛⬛⬛")
             with YoutubeDL(ydl_optsvideo) as ydl:
                 if config_progressbar == 'on':
                     bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬛⬛⬛⬛⬛⬛")
                 try:
-                    ydl.download(urlhigh) 
+                    ydl.download(urlhigh)
                     if config_progressbar == 'on':
                         bot.edit_message_text(chat_id=_message.chat.id, message_id=_message.message_id, text="Progress : ⬜⬜⬜⬜⬜⬛⬛⬛⬛")              
                 except Exception as e:
@@ -955,14 +957,19 @@ def callback_query_handler(call):
                         file_size_cap = round(file_size / (1024**2), 2)
                         unit = "MB"
                     if file_size>= 20:
-                        _splitting = bot.send_message(chat_id=call.message.chat.id, text=f"Filesize is above telegram's limitation (2 GB).\n\nSplitting the video into parts . . .")
+                        bot.edit_message_text(chat_id=call.message.chat.id,message_id=_message.message_id, text=f"Filesize is above telegram's limitation so splitting the video into parts . . .")
                         file_dir = str(call.from_user.id).replace('-', '').strip()
                         files = split_video(filenamevideogroup+extension, file_dir)
-                        bot.delete_message(chat_id=call.message.chat.id, message_id=_splitting.message_id)
+                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text=f'`Splitting complete ({len(files)} files)`', parse_mode="Markdown")
+                        
                         for i in files:
+                            part = 1
+                            bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text=f'`Sending {part}/{len(files)} . . .`', parse_mode="Markdown")
                             if config_chataction == 'on':
                                 bot.send_chat_action(chat_id=call.message.chat.id, action="upload_video")
-                            bot.send_video(chat_id=call.message.chat.id, video=i, caption=f"Quality : <b>{selection.capitalize()} resolution ({str(file_size_cap)+unit})</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
+                            bot.send_video(chat_id=call.message.chat.id, video=i, caption=f"Quality : <b>{selection.capitalize()} resolution\n\nPart {part}/{len(files)}</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
+                            part = part + 1 
+                        bot.delete_message(chat_id=call.message.chat.id, message_id=_message.message_id)                     
                         shutil.rmtree(f'{str(call.from_user.id).replace("-", "").strip()}')
 
 
