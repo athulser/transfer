@@ -25,7 +25,7 @@ BOT_USERNAME = 'morty_ai_bot'
 # BOT_USERNAME = 'atulrvbot'
 
 
-telebot.apihelper.READ_TIMEOUT = 250
+telebot.apihelper.READ_TIMEOUT = 350
 telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
 
 state_storage = StateMemoryStorage()
@@ -55,7 +55,6 @@ active_users = {}
 active_users_wiki = {}
 play_active_users = {}
 bot.delete_my_commands(scope=telebot.types.BotCommandScopeAllGroupChats(), language_code=None)
-
 
 
 
@@ -382,15 +381,19 @@ def generate_image(query, message, total_credits, userID):
 
 @bot.my_chat_member_handler()
 def me(message: telebot.types.ChatMemberUpdated):
-    new = message.new_chat_member
-    if new.status == 'member':
+    update = message.new_chat_member
+    if update.status == 'member':
         bot.send_message(message.chat.id, "King is here!! HHAHAHAHA!!\n\nMake me an admin and i can start doing my job\n\nSend any youtube video URLs to download.\nSent any Instagram media URLs to download.\nSend any Facebook media URLs to download\nSend `/play songname` to play any song you like.\nSend `/wiki query` to get wikipedia results.")
         add_entry(message.chat.id)
-    elif new.status == 'administrator':
+    if update.status == 'administrator':
         bot.send_message(message.chat.id, "Send any YouTube video URLs to download.\n\nSent any Instagram media URLs to download\n\nUse `/play any song` to play any song you want.\n\nSend any Facebook media URLs to download\n\nSend /wiki to get wikipedia search results\n\nSend /account to view your account", parse_mode="Markdown")
         add_entry(message.chat.id)
-    elif new.status == 'left':
+    if update.status == 'left':
         groups_collection.delete_one({"id":str(message.chat.id)})
+    if update.status == 'kicked':
+        collection_users.delete_one({'id':str(message.chat.id)})
+
+
 
 
 
@@ -424,7 +427,7 @@ def clean(message):
         cleaned = 0
         files = os.listdir('.')
         for i in files:
-            if i.startswith("play") or i.startswith("audio") or i.startswith("video") or i.startswith('error'):
+            if i.startswith("play") or i.startswith("audio") or i.startswith("video") or i.startswith('error') or i.startswith('16'):
                 os.remove(i)
                 cleaned = cleaned + 1
     if cleaned == 0:
@@ -558,7 +561,8 @@ def play_command(message):
             first_markup.add(
                 InlineKeyboardButton("❌ Cancel ❌", callback_data="close")
             )
-            bot.edit_message_text(message_id=_message.message_id,chat_id=chatID, text=f"<b>Found {str(len(dictdata))} results for {query} 🔎</b>\n\n👇", reply_markup=first_markup, parse_mode="html")
+            bot.delete_message(message_id=_message.message_id, chat_id=chatID)
+            bot.send_message(chat_id=chatID, text=f"<b>Found {str(len(dictdata))} results for {query} 🔎</b>\n\n👇", reply_markup=first_markup, parse_mode="html")
 
 
 
@@ -810,7 +814,7 @@ def callback_query_handler(call):
 
 
                         
-                        if isSubscriber(call.message.chat.id) == 0 and file_size >= limit:
+                        if file_size >= limit:
                             bot.send_message(call.message.chat.id, f"Filesize is too large ({file_size_cap+unit})! Subscribe to premium to get unlimited filesize")
                             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
@@ -884,7 +888,7 @@ def callback_query_handler(call):
             if config_progressbar == 'on':
                 _message = bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Progress : ⬜⬛⬛⬛⬛⬛⬛⬛⬛")
             else:
-                _message = bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Downloading . . .")
+                _message = bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="`Downloading . . .`", parse_mode='Markdown')
             filenamevideogroup = f'videogroup-{str(randomNumber())}'
             if selection == "ultra high":
                 ydl_optsvideo = {
@@ -937,14 +941,13 @@ def callback_query_handler(call):
                     else:
                         file_size_cap = round(file_size / (1024**2), 2)
                         unit = "MB"
-                    if file_size>= 20:
+                    if file_size>= 2000000000:
                         bot.edit_message_text(chat_id=call.message.chat.id,message_id=_message.message_id, text=f"`Filesize is above telegram's limitation so splitting the video into parts . . .`", parse_mode='Markdown')
                         file_dir = str(call.from_user.id).replace('-', '').strip()
                         files = split_video(filenamevideogroup+extension, file_dir)
-                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text=f'`Splitting complete ({len(files)} files)`', parse_mode="Markdown")
-                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text=f'`Sending the parts (This may take some time) . . .`', parse_mode="Markdown")
+                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=_message.message_id, text=f'`Sending {len(files)} parts, total size is {str(file_size_cap)+unit} . . .`', parse_mode="Markdown")
+                        part = 1
                         for i in files:
-                            part = 1
                             if config_chataction == 'on':
                                 bot.send_chat_action(chat_id=call.message.chat.id, action="upload_video")
                             bot.send_video(chat_id=call.message.chat.id, video=i, caption=f"Quality : <b>{selection.capitalize()} resolution\n\nPart {part}/{len(files)}</b>\n\n\n<a href='https://t.me/mortylab'>Join MortyLabz</a> | <a href='https://buymeacoffee.com/mortylabz'>Donate me</a>", parse_mode="html", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Open in YouTube", url=f'{urlhigh}')))
@@ -1732,20 +1735,30 @@ def bc_command(message):
         if len(query) == 0:
             bot.send_message(int(SUDO_ID), "Type something")
         else:
-            removed_count = 0
-            bot.send_message(int(SUDO_ID), "Started delivering . . .")
-            query = query.strip()
-            for i in collection_users.find({}):
-                try:
-                    bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
-                    time.sleep(1)
-                except:
-                    collection_users.delete_one({'id':i['id']})
-                    print(f"User blocked - Deleted {i['id']} from DB")
-                    removed_count = removed_count + 1
+            def broadcast_privates():
+                bot.send_message(int(SUDO_ID), "Started delivering . . .")
+                query = query.strip()
+                removed_count = 0
+                delay = 0.1
+                limits = 0
+                for i in collection_users.find({}):
+                    try:
+                        bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
+                        time.sleep(delay)
+                    except Exception as e:
+                        if '429' in str(e):
+                            delay += 0.1
+                            limits += 1
+                            print(f"Ratelimit occured, increased to delay to {delay} seconds")
+                            time.sleep(10)
+
+                        if '403' in str(e):
+                            collection_users.delete_one({'id':i['id']})
+                            print(f"User blocked - Deleted {i['id']} from DB")
+                            removed_count = removed_count + 1
             
-            bot.send_message(int(SUDO_ID), f"Message sent successfull!\nRemoved {removed_count} users from DB.")
-            
+                bot.send_message(int(SUDO_ID), f"Message sent successfull!\nRemoved {removed_count} users from DB.\n\nGot hit by Ratelimits {limits} times")
+            threading.Thread(target=broadcast_privates).start()
 
 
 
@@ -1756,19 +1769,32 @@ def bc_groups(message):
         if len(query) == 0:
             bot.send_message(int(SUDO_ID), "Type something")
         else:
-            removed_count = 0
-            bot.send_message(int(SUDO_ID), "Started delivering . . .")
-            query = query.strip()
-            for i in groups_collection.find({}):
-                if i['general']['get_updates'] == 'on':
-                    try:
-                        bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
-                        time.sleep(1)
-                    except:
-                        groups_collection.delete_one({'id':i['id']})
-                        print(f"Blocked / No permission - Deleted group {i['id']} from DB")
-                        removed_count = removed_count + 1
-            bot.send_message(int(SUDO_ID), f"Message sent successfull!\nRemoved {removed_count} groups from DB.")
+            def broadcast_groups():
+                bot.send_message(int(SUDO_ID), "Started delivering . . .")
+                query = query.strip()
+                removed_count = 0
+                delay = 0.1
+                limits = 0
+                
+                for i in groups_collection.find({}):
+                    if i['general']['get_updates'] == 'on':
+                        try:
+                            bot.send_message(int(i['id']), query, parse_mode='Markdown', disable_web_page_preview=True)
+                            time.sleep(delay)
+                        except Exception as e:
+                            if '429' in str(e):
+                                delay += 0.1
+                                limits += 1
+                                print(f"Ratelimit occured, increased to delay to {delay} seconds")
+                                time.sleep(10)
+
+                            if '403' in str(e):
+                                groups_collection.delete_one({'id':i['id']})
+                                print(f"Blocked / No permission - Deleted group {i['id']} from DB")
+                                removed_count = removed_count + 1
+
+
+                bot.send_message(int(SUDO_ID), f"Message sent successfull!\nRemoved {removed_count} groups from DB.\n\nGot hit by {limits}")
 
         
 
