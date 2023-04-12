@@ -1726,7 +1726,7 @@ def subscribe_command(message):
 def promotion_message(message):
     if message.chat.id == int(SUDO_ID):
         promotion_text = message.text.replace('/promote', '').strip()
-        buttons = [[InlineKeyboardButton("HINDI SONGS", url='https://t.me/Prasadcreation1')], [InlineKeyboardButton("😍Whatsapp status😍", url='https://t.me/Prasadcreation1')], [InlineKeyboardButton("✨JOIN US🎶", url='https://t.me/Prasadcreation1')]]
+        buttons = [[InlineKeyboardButton("HINDI SONGS", url='https://t.me/+3rGHg2X5Kq80MTBl')], [InlineKeyboardButton("😍Whatsapp status😍", url='https://t.me/+3rGHg2X5Kq80MTBl')], [InlineKeyboardButton("✨JOIN US🎶", url='https://t.me/+3rGHg2X5Kq80MTBl')]]
         def promote(text, buttons,userID):
             to_send = []
             bot.send_message(int(userID), "Promotion message is now delivering. . .")
