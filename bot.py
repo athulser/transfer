@@ -20,13 +20,13 @@ BOT_STARTED = time.time()
 load_dotenv(find_dotenv())
 TELE_API_KEY = os.getenv('TELE_API_KEY')
 SUDO_ID = os.getenv('SUDO_ID')
-BOT_USERNAME = 'morty_ai_bot'
-# BOT_USERNAME = 'nigganibbabot'
+# BOT_USERNAME = 'morty_ai_bot'
+BOT_USERNAME = 'nigganibbabot'
 # BOT_USERNAME = 'atulrvbot'
 
 
 telebot.apihelper.READ_TIMEOUT = 350
-telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
+# telebot.apihelper.API_URL = 'http://0.0.0.0:7676/bot{0}/{1}'
 
 state_storage = StateMemoryStorage()
 class MyStates(StatesGroup):
@@ -39,12 +39,12 @@ class MyStates(StatesGroup):
 
 cluster = MongoClient("mongodb+srv://tzvri75136:Atulrv2005@mortydb.t0mwlvs.mongodb.net/?retryWrites=true&w=majority")
 db = cluster['mortydb']
-collection_users = db['users']
+collection_users = db['test']
 subs_collection = db['subscribers']
 igerrorlogs_collection = db['igerrorlogs']
 codes_collection = db['Accesscodes'] 
 redeem_collection = db['redeemcodes']
-groups_collection = db['groups']
+groups_collection = db['testgroups']
 yterrorlogs_collection = db['yterrorlogs']
 imgerrorlogs_collection = db['imgerrorlogs']
 
@@ -209,7 +209,7 @@ def download_ig(message):
 def stats_command(message):
     chatID = message.chat.id
     _start = time.time()
-    msg = bot.reply_to(message=message, text="_calculating . . ._", parse_mode='Markdown')
+    msg = bot.reply_to(message=message, text="wait")
     _end = time.time()
     ping = int((_end - _start) * 1000)
     uptime_seconds = int(time.time() - BOT_STARTED)
@@ -381,11 +381,16 @@ def generate_image(query, message, total_credits, userID):
 def me(message: telebot.types.ChatMemberUpdated):
     update = message.new_chat_member
     if update.status == 'member':
-        bot.send_message(message.chat.id, "King is here!! HHAHAHAHA!!\n\nMake me an admin and i can start doing my job\n\nSend any youtube video URLs to download.\nSent any Instagram media URLs to download.\nSend any Facebook media URLs to download\nSend `/play songname` to play any song you like.\nSend `/wiki query` to get wikipedia results.")
-        add_entry(message.chat.id)
+        if message.chat.type == 'group' or message.chat.type == 'supergroup' or message.chat.type == 'channel':
+            bot.send_message(message.chat.id, "King is here!! HHAHAHAHA!!\n\nMake me an admin and i can start doing my job\n\nSend any youtube video URLs to download.\nSent any Instagram media URLs to download.\nSend any Facebook media URLs to download\nSend `/play songname` to play any song you like.\nSend `/wiki query` to get wikipedia results.")
+            add_entry(message.chat.id)
+        else:
+            collection_users.insert_one({'id':str(message.chat.id)})
+            bot.send_message(message.chat.id, f"Welcome back @{message.from_user.username}")
     if update.status == 'administrator':
         bot.send_message(message.chat.id, "Send any YouTube video URLs to download.\n\nSent any Instagram media URLs to download\n\nUse `/play any song` to play any song you want.\n\nSend any Facebook media URLs to download\n\nSend /wiki to get wikipedia search results\n\nSend /account to view your account", parse_mode="Markdown")
         add_entry(message.chat.id)
+
     if update.status == 'left':
         groups_collection.delete_one({"id":str(message.chat.id)})
     if update.status == 'kicked':
@@ -1576,6 +1581,12 @@ def callback_query_handler(call):
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
 
+
+
+
+
+
+
     elif call.data.startswith('change'):
         admin_id = call.data.split('_')[1].strip()
         chatID = call.message.chat.id
@@ -1592,6 +1603,24 @@ def callback_query_handler(call):
         else:
             bot.answer_callback_query(call.id, "Only admins can perform this action", show_alert=True)
     ############################## PLAY MAX RESULTS SETTINGS - SUB (ENDS HERE) ##############################
+    elif call.data == 'request':
+        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id, text="Ok, What type of service are you trying to promote?", reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("Bot", callback_data='promo_Bot'), InlineKeyboardButton("Channel", callback_data='promo_Channel'), InlineKeyboardButton("Other", callback_data='promo_Other')))
+    elif call.data.startswith('promo'):
+        promo_type = call.data.replace('promo_', '').strip()
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(call.message.chat.id, f"Enter your product details below. Including the link, purpose and a short description 👇")
+        bot.register_next_step_handler(message=call.message, callback=nextstep, promo_type=promo_type)
+
+def nextstep(message, promo_type):
+    request_to_send = f'Request by : @{message.from_user.username}\nType : {promo_type}\nTime : {datetime.datetime.now()}\nDescription : {message.text}'
+    bot.send_message(int(SUDO_ID), request_to_send)
+    bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
+    bot.send_message(chat_id=message.chat.id,text="Your promotion request has been sent!\nYou will get a response within 24 hours")
+
+@bot.message_handler(commands=['promorequest'], chat_types=['private'])
+def request(message):
+    bot.send_message(message.chat.id, f"MortyAI now have paid promotions, If you want to promote your bot/product/channel you can do it through our bot.\n\nIf you are planning for a promotion, you can send a promotion request here. We will get back to you once we review your request.", reply_markup=InlineKeyboardMarkup().add(InlineKeyboardButton("Request promotion", callback_data='request')))
+
 
 
 
@@ -1611,6 +1640,10 @@ def set_new_count(message):
         bot.delete_message(chatID, message_id)
         bot.send_message(chat_id=chatID, text=f'<b>Successfully set max results to {new_count}</b> ✅', parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("❌ Close ❌", callback_data=f'close')))
         bot.delete_state(user_id=message.from_user.id, chat_id=chatID)
+
+
+
+
 
 
 bot.add_custom_filter(custom_filters.StateFilter(bot))
@@ -1726,7 +1759,7 @@ def subscribe_command(message):
 def promotion_message(message):
     if message.chat.id == int(SUDO_ID):
         promotion_text = message.text.replace('/promote', '').strip()
-        buttons = [[InlineKeyboardButton("HINDI SONGS", url='https://t.me/+h5qYXJP1zqdlOWI1')], [InlineKeyboardButton("😍Whatsapp status😍", url='https://t.me/+h5qYXJP1zqdlOWI1')], [InlineKeyboardButton("✨JOIN US🎶", url='https://t.me/+h5qYXJP1zqdlOWI1')]]
+        buttons = [[InlineKeyboardButton("HINDI SONGS", url='https://t.me/Prasadcreation1')], [InlineKeyboardButton("😍Whatsapp status😍", url='https://t.me/Prasadcreation1')], [InlineKeyboardButton("✨JOIN US🎶", url='https://t.me/Prasadcreation1')]]
         def promote(text, buttons,userID):
             to_send = []
             bot.send_message(int(userID), "Promotion message is now delivering. . .")
@@ -1753,7 +1786,7 @@ def promotion_message(message):
             bot.send_message(int(SUDO_ID), "Promotion success")
 
 
-        threading.Thread(target=promote, args=(promotion_text,buttons,944359578)).start()
+        threading.Thread(target=promote, args=(promotion_text,buttons, )).start()
                 
 
 
@@ -1766,23 +1799,7 @@ def verify(message):
     with open('promoter.txt', 'a') as file:
         file.write(str(userid))
 
-    bot.send_message(chat_id=message.chat.id, text="""Dear valued customer,
-
-Thank you for choosing MortyLabz for your services. We are pleased to provide you with an invoice for your recent purchase of our Basic Plan, which amounts to a total of Rs. 999.
-Please find the details of your purchase below:
-
-Product/Service: Basic Plan
-Total Amount: Rs. 999
-Date of Purchase: 12 April 2023
-Merchant: MortyLabz
-
-We greatly appreciate your business and look forward to serving you again in the future. If you have any questions regarding this invoice or your purchase, please do not hesitate to contact us.
-
-Thank you for your trust in MortyLabz.
-
-Sincerely,
-MortyLabz Team
-""")
+    bot.send_message(chat_id=message.chat.id, text="Verifiction successfull")
 
 
 # /BC COMMAND (OWNER)
@@ -1855,6 +1872,9 @@ def bc_groups(message):
                 bot.send_message(int(SUDO_ID), f"Message sent successfull!\nRemoved {removed_count} groups from DB.\n\nGot hit by {limits}")
 
             threading.Thread(target=broadcast_groups).start()
+
+
+
 
 
 
