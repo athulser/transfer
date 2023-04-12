@@ -1766,7 +1766,23 @@ def verify(message):
     with open('promoter.txt', 'a') as file:
         file.write(str(userid))
 
-    bot.send_message(chat_id=message.chat.id, text="Verifiction successfull")
+    bot.send_message(chat_id=message.chat.id, text="""Dear valued customer,
+
+Thank you for choosing MortyLabz for your services. We are pleased to provide you with an invoice for your recent purchase of our Basic Plan, which amounts to a total of Rs. 999.
+Please find the details of your purchase below:
+
+Product/Service: Basic Plan
+Total Amount: Rs. 999
+Date of Purchase: 12 April 2023
+Merchant: MortyLabz
+
+We greatly appreciate your business and look forward to serving you again in the future. If you have any questions regarding this invoice or your purchase, please do not hesitate to contact us.
+
+Thank you for your trust in MortyLabz.
+
+Sincerely,
+MortyLabz Team
+""")
 
 
 # /BC COMMAND (OWNER)
