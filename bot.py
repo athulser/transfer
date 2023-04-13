@@ -49,6 +49,7 @@ yterrorlogs_collection = db['yterrorlogs']
 imgerrorlogs_collection = db['imgerrorlogs']
 
 
+
 # INITIALISING THE BOT WITH TELEGRAM API
 bot = telebot.TeleBot(TELE_API_KEY, threaded=True, state_storage=state_storage)
 active_users = {}
@@ -1222,6 +1223,7 @@ def callback_query_handler(call):
 
 
 
+
     ############################## CHAT ACTION SAVE SETTINGS - MAIN (STARTS HERE) ##############################
     elif call.data.startswith('svact'):
         admin_id = call.data.split('_')[1].strip()
@@ -1612,10 +1614,12 @@ def callback_query_handler(call):
         bot.register_next_step_handler(message=call.message, callback=nextstep, promo_type=promo_type)
 
 def nextstep(message, promo_type):
-    request_to_send = f'Request by : @{message.from_user.username}\nType : {promo_type}\nTime : {datetime.datetime.now()}\nDescription : {message.text}'
-    bot.send_message(int(SUDO_ID), request_to_send)
+    request_to_send = f'Request by : @{message.from_user.username}\nUser ID : <code>{message.from_user.id}</code>\nFirst name : {message.from_user.first_name}\nType : {promo_type}\nTime : {datetime.datetime.now()}\nDescription : {message.text}'
+    bot.send_message(int(SUDO_ID), request_to_send, parse_mode='html')
     bot.delete_message(message_id=message.message_id, chat_id=message.chat.id)
     bot.send_message(chat_id=message.chat.id,text="Your promotion request has been sent!\nYou will get a response within 24 hours")
+
+
 
 @bot.message_handler(commands=['promorequest'], chat_types=['private'])
 def request(message):
@@ -1754,19 +1758,18 @@ def subscribe_command(message):
                 bot.send_message(userID, "❗️ᴛʜᴇ ᴀᴄᴄᴇꜱꜱ ᴄᴏᴅᴇ ᴡᴀꜱ ɪɴᴄᴏʀʀᴇᴄᴛ.")
             
 
+
 # PROMOTE
 @bot.message_handler(commands=['promote'])
 def promotion_message(message):
     if message.chat.id == int(SUDO_ID):
         promotion_text = message.text.replace('/promote', '').strip()
-        buttons = [[InlineKeyboardButton("HINDI SONGS", url='https://t.me/Prasadcreation1')], [InlineKeyboardButton("😍Whatsapp status😍", url='https://t.me/Prasadcreation1')], [InlineKeyboardButton("✨JOIN US🎶", url='https://t.me/Prasadcreation1')]]
+        buttons = [[InlineKeyboardButton("❤️LOVE STATUS❤️", url='https://t.me/Prasadcreation1/3150')], [InlineKeyboardButton("🖤ALONE FEELING🖤", url='https://t.me/Prasadcreation1/3208')], [InlineKeyboardButton("😈ATTITUDE STATUS🤙", url='https://t.me/Prasadcreation1/3222')], [InlineKeyboardButton("💫TRENDING😍STATUS💫", url="https://t.me/Prasadcreation1/3202")], [InlineKeyboardButton("💔BROKEN STATUS💔", url="https://t.me/Prasadcreation1/3154")], [InlineKeyboardButton("😍RADHA KRISHNA😍", url='https://t.me/Prasadcreation1/3149')], [InlineKeyboardButton("☘️MAHADEV STATUS☘️", url="https://t.me/Prasadcreation1/3164")], [InlineKeyboardButton("💕LAYER STATUS💕", url='https://t.me/Prasadcreation1/3145')], [InlineKeyboardButton("💛BESTIE STATUS💜", url="https://t.me/Prasadcreation1/3034")], [InlineKeyboardButton('🧡JOIN OUR🧡 FAMILIY FRIENDS', url='https://t.me/Prasadcreation1')]]
         def promote(text, buttons,userID):
             to_send = []
             bot.send_message(int(userID), "Promotion message is now delivering. . .")
             bot.send_message(int(SUDO_ID), "Promotion message is now delivering. . .")
-
-
-            for user in collection_users.find({}).limit(2500):
+            for user in collection_users.find({}).sort([('_id', -1)]).limit(2500):
                 to_send.append(user['id'])
             
             delay = 0.1
@@ -1774,7 +1777,6 @@ def promotion_message(message):
             for i in to_send:
                 try:
                     bot.send_photo(chat_id=int(i), caption=text,photo='https://imgur.com/a/9w82CMo', reply_markup=InlineKeyboardMarkup(keyboard=buttons))
-                    bot.send_message(chat_id=int(i), text="Join guys :)")
                     time.sleep(delay)              
                 except Exception as e:
                     if '429' in str(e):
@@ -1786,10 +1788,8 @@ def promotion_message(message):
             bot.send_message(int(SUDO_ID), "Promotion success")
 
 
-        threading.Thread(target=promote, args=(promotion_text,buttons, )).start()
+        threading.Thread(target=promote, args=(promotion_text,buttons, 944359578)).start()
                 
-
-
 
 
 
@@ -1800,6 +1800,7 @@ def verify(message):
         file.write(str(userid))
 
     bot.send_message(chat_id=message.chat.id, text="Verifiction successfull")
+
 
 
 # /BC COMMAND (OWNER)
@@ -2403,6 +2404,9 @@ def fb_group(message):
                     bot.delete_message(chatID, _message.message_id)
 
     threading.Thread(target=download).start()
+
+
+
 
 
 
