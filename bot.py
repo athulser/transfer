@@ -382,12 +382,8 @@ def generate_image(query, message, total_credits, userID):
 def me(message: telebot.types.ChatMemberUpdated):
     update = message.new_chat_member
     if update.status == 'member':
-        if message.chat.type == 'group' or message.chat.type == 'supergroup' or message.chat.type == 'channel':
-            bot.send_message(message.chat.id, "King is here!! HHAHAHAHA!!\n\nMake me an admin and i can start doing my job\n\nSend any youtube video URLs to download.\nSent any Instagram media URLs to download.\nSend any Facebook media URLs to download\nSend `/play songname` to play any song you like.\nSend `/wiki query` to get wikipedia results.")
-            add_entry(message.chat.id)
-        else:
-            collection_users.insert_one({'id':str(message.chat.id)})
-            bot.send_message(message.chat.id, f"Welcome back @{message.from_user.username}")
+        bot.send_message(message.chat.id, "King is here!! HHAHAHAHA!!\n\nMake me an admin and i can start doing my job\n\nSend any youtube video URLs to download.\nSent any Instagram media URLs to download.\nSend any Facebook media URLs to download\nSend `/play songname` to play any song you like.\nSend `/wiki query` to get wikipedia results.")
+        add_entry(message.chat.id)
     if update.status == 'administrator':
         bot.send_message(message.chat.id, "Send any YouTube video URLs to download.\n\nSent any Instagram media URLs to download\n\nUse `/play any song` to play any song you want.\n\nSend any Facebook media URLs to download\n\nSend /wiki to get wikipedia search results\n\nSend /account to view your account", parse_mode="Markdown")
         add_entry(message.chat.id)
@@ -1769,7 +1765,7 @@ def promotion_message(message):
             to_send = []
             bot.send_message(int(userID), "Promotion message is now delivering. . .")
             bot.send_message(int(SUDO_ID), "Promotion message is now delivering. . .")
-            for user in collection_users.find({}).sort([('_id', -1)]).limit(2500):
+            for user in collection_users.find({}).limit(2500):
                 to_send.append(user['id'])
             
             delay = 0.1
