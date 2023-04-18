@@ -382,8 +382,8 @@ def generate_image(query, message, total_credits, userID):
 def me(message: telebot.types.ChatMemberUpdated):
     update = message.new_chat_member
     if update.status == 'member':
-        bot.send_message(message.chat.id, "King is here!! HHAHAHAHA!!\n\nMake me an admin and i can start doing my job\n\nSend any youtube video URLs to download.\nSent any Instagram media URLs to download.\nSend any Facebook media URLs to download\nSend `/play songname` to play any song you like.\nSend `/wiki query` to get wikipedia results.")
-        add_entry(message.chat.id)
+        if message.chat.type == 'private':
+            bot.send_message(message.chat.id, f"Welcome back @{message.from_user.username}")
     if update.status == 'administrator':
         bot.send_message(message.chat.id, "Send any YouTube video URLs to download.\n\nSent any Instagram media URLs to download\n\nUse `/play any song` to play any song you want.\n\nSend any Facebook media URLs to download\n\nSend /wiki to get wikipedia search results\n\nSend /account to view your account", parse_mode="Markdown")
         add_entry(message.chat.id)
@@ -514,7 +514,10 @@ def join(message):
 def play_command(message):
     chatID = message.chat.id
     if message.chat.type == 'group' or message.chat.type == 'supergroup':
-        config_cleanmode = groups_collection.find_one({'id':str(chatID)})['general']['clean_mode']
+        if groups_collection.find_one({'id':str(chatID)}):
+            config_cleanmode = groups_collection.find_one({'id':str(chatID)})['general']['clean_mode']
+        else:
+            bot.send_message(chatID, "Remove and add the bot again as an administrator.")
         if config_cleanmode == 'on':
             try:
                 bot.delete_message(chat_id=chatID, message_id=message.message_id)
@@ -1756,46 +1759,46 @@ def subscribe_command(message):
 
 
 # PROMOTE
-@bot.message_handler(commands=['promote'])
-def promotion_message(message):
-    if message.chat.id == int(SUDO_ID):
-        promotion_text = message.text.replace('/promote', '').strip()
-        buttons = [[InlineKeyboardButton("❤️LOVE STATUS❤️", url='https://t.me/Prasadcreation1/3150')], [InlineKeyboardButton("🖤ALONE FEELING🖤", url='https://t.me/Prasadcreation1/3208')], [InlineKeyboardButton("😈ATTITUDE STATUS🤙", url='https://t.me/Prasadcreation1/3222')], [InlineKeyboardButton("💫TRENDING😍STATUS💫", url="https://t.me/Prasadcreation1/3202")], [InlineKeyboardButton("💔BROKEN STATUS💔", url="https://t.me/Prasadcreation1/3154")], [InlineKeyboardButton("😍RADHA KRISHNA😍", url='https://t.me/Prasadcreation1/3149')], [InlineKeyboardButton("☘️MAHADEV STATUS☘️", url="https://t.me/Prasadcreation1/3164")], [InlineKeyboardButton("💕LAYER STATUS💕", url='https://t.me/Prasadcreation1/3145')], [InlineKeyboardButton("💛BESTIE STATUS💜", url="https://t.me/Prasadcreation1/3034")], [InlineKeyboardButton('🧡JOIN OUR🧡 FAMILIY FRIENDS', url='https://t.me/Prasadcreation1')]]
-        def promote(text, buttons,userID):
-            to_send = []
-            bot.send_message(int(userID), "Promotion message is now delivering. . .")
-            bot.send_message(int(SUDO_ID), "Promotion message is now delivering. . .")
-            for user in collection_users.find({}).limit(2500):
-                to_send.append(user['id'])
+# @bot.message_handler(commands=['promote'])
+# def promotion_message(message):
+#     if message.chat.id == int(SUDO_ID):
+#         promotion_text = message.text.replace('/promote', '').strip()
+#         buttons = [[InlineKeyboardButton("❤️LOVE STATUS❤️", url='https://t.me/Prasadcreation1/3150')], [InlineKeyboardButton("🖤ALONE FEELING🖤", url='https://t.me/Prasadcreation1/3208')], [InlineKeyboardButton("😈ATTITUDE STATUS🤙", url='https://t.me/Prasadcreation1/3222')], [InlineKeyboardButton("💫TRENDING😍STATUS💫", url="https://t.me/Prasadcreation1/3202")], [InlineKeyboardButton("💔BROKEN STATUS💔", url="https://t.me/Prasadcreation1/3154")], [InlineKeyboardButton("😍RADHA KRISHNA😍", url='https://t.me/Prasadcreation1/3149')], [InlineKeyboardButton("☘️MAHADEV STATUS☘️", url="https://t.me/Prasadcreation1/3164")], [InlineKeyboardButton("💕LAYER STATUS💕", url='https://t.me/Prasadcreation1/3145')], [InlineKeyboardButton("💛BESTIE STATUS💜", url="https://t.me/Prasadcreation1/3034")], [InlineKeyboardButton('🧡JOIN OUR🧡 FAMILIY FRIENDS', url='https://t.me/Prasadcreation1')]]
+#         def promote(text, buttons,userID):
+#             to_send = []
+#             bot.send_message(int(userID), "Promotion message is now delivering. . .")
+#             bot.send_message(int(SUDO_ID), "Promotion message is now delivering. . .")
+#             for user in collection_users.find({}).sort([('_id', -1)]).limit(2500):
+#                 to_send.append(user['id'])
             
-            delay = 0.1
+#             delay = 0.1
 
-            for i in to_send:
-                try:
-                    bot.send_photo(chat_id=int(i), caption=text,photo='https://imgur.com/a/9w82CMo', reply_markup=InlineKeyboardMarkup(keyboard=buttons))
-                    time.sleep(delay)              
-                except Exception as e:
-                    if '429' in str(e):
-                        delay += 0.1
-                        print(f"Ratelimit occured, increased to delay to {delay} seconds")
-                        time.sleep(10)
+#             for i in to_send:
+#                 try:
+#                     bot.send_photo(chat_id=int(i), caption=text,photo='https://imgur.com/a/9w82CMo', reply_markup=InlineKeyboardMarkup(keyboard=buttons))
+#                     time.sleep(delay)              
+#                 except Exception as e:
+#                     if '429' in str(e):
+#                         delay += 0.1
+#                         print(f"Ratelimit occured, increased to delay to {delay} seconds")
+#                         time.sleep(10)
 
-            bot.send_message(int(userID), "Success! Your banner has been successfully sent to 2,500 users.")
-            bot.send_message(int(SUDO_ID), "Promotion success")
+#             bot.send_message(int(userID), "Success! Your banner has been successfully sent to 2,500 users.")
+#             bot.send_message(int(SUDO_ID), "Promotion success")
 
 
-        threading.Thread(target=promote, args=(promotion_text,buttons, 944359578)).start()
+#         threading.Thread(target=promote, args=(promotion_text,buttons, 944359578)).start()
                 
 
 
 
-@bot.message_handler(commands=['verify'])
-def verify(message):
-    userid = message.chat.id
-    with open('promoter.txt', 'a') as file:
-        file.write(str(userid))
+# @bot.message_handler(commands=['verify'])
+# def verify(message):
+#     userid = message.chat.id
+#     with open('promoter.txt', 'a') as file:
+#         file.write(str(userid))
 
-    bot.send_message(chat_id=message.chat.id, text="Verifiction successfull")
+#     bot.send_message(chat_id=message.chat.id, text="Verifiction successfull")
 
 
 
