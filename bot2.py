@@ -49,24 +49,10 @@ def mig(message):
 
     for i in users:
         try:
-            bot.send_message(chat_id=int(i), text='''
-🎬 Title : Oh My Darling 
-🗓 Year : 2023
-🔊 Language : #Malayalam
-💿 Quality : HDRIP
-
-#മലയാളം
-
-🔗 𝗖𝗛𝗔𝗡𝗡𝗘𝗟 𝗟𝗜𝗡𝗞 ☞
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1
-          ''')
+            bot.send_chat_action(chat_id=int(i), action='upload_audio')
             time.sleep(delay)
         except Exception as e:
-            if 'blocked' in str(e).lower():
+            if '403' in str(e).lower():
                 users_collection.delete_one({'id':str(i)})
                 added_collection.insert_one({'id':str(i)})
                 print("Migrated")
