@@ -49,7 +49,8 @@ def mig(message):
 
     for i in users:
         try:
-            bot.send_chat_action(chat_id=int(i), action='upload_audio')
+            bot.send_chat_action(chat_id=int(i), action='typing')
+            print("Sent")
             time.sleep(delay)
         except Exception as e:
             if '403' in str(e).lower():
@@ -59,6 +60,7 @@ def mig(message):
                 migrated+=1
             if '429' in str(e):
                 delay+=0.1
+                print("Rate limit")
                 time.sleep(10)
     
     bot.send_message(message.chat.id, f"Migrate complete\nMigrated {migrated} users to new database")
