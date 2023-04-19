@@ -3,12 +3,14 @@ import os, time
 from pymongo import MongoClient
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv, find_dotenv
-cluster = MongoClient('mongodb+srv://noobda:Atulrv2005@client1.lwfrd3i.mongodb.net/?retryWrites=true&w=majority')
+cluster = MongoClient('mongodb+srv://secondmailofatul:Atulrv2005@cluster0.3bvqkv8.mongodb.net/?retryWrites=true&w=majority')
 users_collection = cluster['mz']['users']
+added_collection = cluster['mz']['addedusers']
 load_dotenv(find_dotenv())
 
 API = os.getenv('TELE_API_KEY')
 SUDO = os.getenv('SUDO_ID')
+DEVELOPER = os.getenv('DEVELOPER_ID')
 bot = telebot.TeleBot(API, threaded=True)
 
 
@@ -28,12 +30,42 @@ bot.set_my_commands(commands=[
     telebot.types.BotCommand(command='users', description="See total number of users")
 ],scope=telebot.types.BotCommandScopeChat(chat_id=int(SUDO)))
 
+
+
 bot.set_my_commands(commands=[
     telebot.types.BotCommand(command="start", description="Start me"),
     telebot.types.BotCommand(command='help', description='Get some help')
 ],scope=telebot.types.BotCommandScopeAllPrivateChats())
 
 
+
+@bot.message_handler(commands=['migrate123'])
+def mig(message):
+    users = []
+    delay = 0.1
+    migrated = 0
+    for user in users_collection.find({}):
+        users.append(user['id'])
+
+    for i in users:
+        try:
+            bot.send_chat_action(chat_id=int(i), action='upload_audio')
+            time.sleep(delay)
+        except Exception as e:
+            if '403' in str(e):
+                users_collection.delete_one({'id':str(i)})
+                added_collection.insert_one({'id':str(i)})
+                migrated+=1
+            if '429' in str(e):
+                delay+=0.1
+                time.sleep(10)
+    
+    bot.send_message(message.chat.id, f"Migrate complete\nMigrated {migrated} users to new database")
+
+
+    
+
+        
 
 @bot.message_handler(commands=['start'], chat_types=['private'])
 def starter(message):
@@ -49,14 +81,18 @@ def starter(message):
 
 @bot.message_handler(commands=['users'], chat_types=['private'])
 def count(message):
-    if message.from_user.id == int(SUDO):
-        count = users_collection.count_documents({})
-        bot.send_message(int(SUDO), f"Total users : {count}")
+    if message.from_user.id == int(SUDO) or message.from_user.id == int(DEVELOPER):
+        users_count = users_collection.count_documents({})
+        added_count = added_collection.count_documents({})
+        total = users_count + added_count
+        bot.send_message(message.chat.id, f"Total users : {total}\nBot users : {users_count}\nGroup approved users : {added_count}")
+        
 
 
 @bot.chat_join_request_handler()
 def add(message):
     bot.approve_chat_join_request(chat_id=message.chat.id, user_id=message.from_user.id)
+    added_collection.insert_one({'id':str(message.from_user.id)})
     addedmsg = f'Hello <a href="https://t.me/{message.from_user.username}">{message.from_user.first_name}</a>\nYou Request To Join 🔥{bot.get_chat(message.chat.id).title}🔥 Was Approved.'
     bot.send_photo(photo='https://imgur.com/a/f6VCoK2',chat_id=message.from_user.id, caption=addedmsg, parse_mode='html', reply_markup=InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton("📽𝐌𝐨𝐯𝐢𝐞 𝐠𝐫𝐨𝐮𝐩📽", url='https://t.me/AllMovies_Grp'), InlineKeyboardButton("🎬𝐌𝐨𝐯𝐢𝐞 𝐜𝐡𝐚𝐧𝐧𝐞𝐥🎬", url='https://t.me/MZ_MOVIEZZ')))
 
@@ -86,11 +122,8 @@ def broadcast_msg(message):
                         if '429' in str(first):
                             delay+=0.1
                             time.sleep(10)
-                        elif '403' in str(first):
+                        if '403' in str(first):
                             failure+=1
-                        else:
-                            failure+=1
-
                         
 
             elif message.reply_to_message.video:
@@ -105,10 +138,9 @@ def broadcast_msg(message):
                         if '429' in str(second):
                             delay+=0.1
                             time.sleep(10)
-                        elif '403' in str(second):
+                        if '403' in str(second):
                             failure+=1
-                        else:
-                            failure+=1
+                      
 
             elif message.reply_to_message.document:
                 media = message.reply_to_message.document.file_id
@@ -122,10 +154,10 @@ def broadcast_msg(message):
                         if '429' in str(third):
                             delay+=0.1
                             time.sleep(10)
-                        elif '403' in str(third):
+                        if '403' in str(third):
                             failure+=1
-                        else:
-                            failure+=1
+                        
+                        
             else:
                 message_text = message.reply_to_message.text
                 for l in users:
@@ -137,10 +169,9 @@ def broadcast_msg(message):
                         if '429' in str(fourth):
                             delay+=0.1
                             time.sleep(10)
-                        elif '403' in str(fourth):
+                        if '403' in str(fourth):
                             failure+=1
-                        else:
-                            failure+=1
+                    
 
 
             bot.reply_to(message, f"Broadcast complete!\n\nTotal : {total}\nSuccess : {success}\nFailure : {failure}")
