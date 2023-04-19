@@ -39,45 +39,7 @@ bot.set_my_commands(commands=[
 
 
 
-@bot.message_handler(commands=['migrate123'])
-def mig(message):
-    users = []
-    delay = 0.1
-    migrated = 0
-    for user in users_collection.find({}):
-        users.append(user['id'])
 
-    for i in users:
-        try:
-            bot.send_message(chat_id=int(i), text='''
-🎬 Title : Oh My Darling 
-🗓 Year : 2023
-🔊 Language : #Malayalam
-💿 Quality : HDRIP
-
-#മലയാളം
-
-🔗 𝗖𝗛𝗔𝗡𝗡𝗘𝗟 𝗟𝗜𝗡𝗞 ☞
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1
-https://t.me/+r6qqA-djnY01Nzg1 
-            ''')
-            print("Sent")
-            time.sleep(delay)
-        except Exception as e:
-            if '403' in str(e):
-                users_collection.delete_one({'id':str(i)})
-                added_collection.insert_one({'id':str(i)})
-                print("Migrated")
-                migrated+=1
-            if '429' in str(e):
-                delay+=0.1
-                print("Rate limit")
-                time.sleep(10)
-    
-    bot.send_message(message.chat.id, f"Migrate complete\nMigrated {migrated} users to new database")
 
 
     
